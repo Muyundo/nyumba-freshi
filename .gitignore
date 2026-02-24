@@ -1,27 +1,10 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
 
-# Distribution / packaging
-build/
+node_modules/
 dist/
-*.egg-info/
-
-# Virtual environments
-.venv/
-venv/
-ENV/
-env/
-
-# Environments
+frontend/dist/
 .env
-
-# IDEs
 .vscode/
 .idea/
-
-# OS files
 Thumbs.db
 ehthumbs.db
 Desktop.ini
