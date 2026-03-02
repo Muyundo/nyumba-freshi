@@ -8,6 +8,9 @@ export default function Register() {
   const [phone, setPhone] = useState('')
   const [location, setLocation] = useState('')
   const [estate, setEstate] = useState('')
+  const [idNumber, setIdNumber] = useState('')
+  const [servicesOffered, setServicesOffered] = useState({ cleaning: false, laundry: false })
+  const [availability, setAvailability] = useState('both')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [message, setMessage] = useState(null)
@@ -26,6 +29,11 @@ export default function Register() {
 
     try {
       const payload = { role, fullName, phone, location, estate, password }
+      if (role === 'Worker') {
+        payload.idNumber = idNumber
+        payload.servicesOffered = Object.keys(servicesOffered).filter((k) => servicesOffered[k])
+        payload.availability = availability
+      }
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -62,15 +70,47 @@ export default function Register() {
             </select>
           </div>
 
-          <div className="form-group">
-            <label>Full Name</label>
-            <input className="form-control" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full Name" />
-          </div>
+            <div className="form-group">
+              <label>Full Name</label>
+              <input className="form-control" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full Name" />
+            </div>
 
-          <div className="form-group">
-            <label>Phone Number</label>
-            <input className="form-control" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0712 345 678" />
-          </div>
+            <div className="form-group">
+              <label>Phone Number</label>
+              <input className="form-control" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0712 345 678" />
+            </div>
+
+            {role === 'Worker' && (
+              <>
+                <div className="form-group">
+                  <label>ID Number</label>
+                  <input className="form-control" value={idNumber} onChange={(e) => setIdNumber(e.target.value)} placeholder="ID Number" />
+                </div>
+
+                <div className="form-group">
+                  <label>Services Offered</label>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <input type="checkbox" checked={servicesOffered.cleaning} onChange={(e) => setServicesOffered((s) => ({ ...s, cleaning: e.target.checked }))} />
+                      Cleaning
+                    </label>
+                    <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <input type="checkbox" checked={servicesOffered.laundry} onChange={(e) => setServicesOffered((s) => ({ ...s, laundry: e.target.checked }))} />
+                      Laundry
+                    </label>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Availability</label>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <label><input type="radio" name="avail" value="weekdays" checked={availability === 'weekdays'} onChange={(e) => setAvailability(e.target.value)} /> Weekdays</label>
+                    <label><input type="radio" name="avail" value="weekends" checked={availability === 'weekends'} onChange={(e) => setAvailability(e.target.value)} /> Weekends</label>
+                    <label><input type="radio" name="avail" value="both" checked={availability === 'both'} onChange={(e) => setAvailability(e.target.value)} /> Both</label>
+                  </div>
+                </div>
+              </>
+            )}
 
           <div className="two-col">
             <div className="form-group">
