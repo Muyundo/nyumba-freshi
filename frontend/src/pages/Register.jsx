@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import api from '../api'
+import './Register.css'
 
 export default function Register() {
   const [role, setRole] = useState('Homeowner')
@@ -23,16 +24,8 @@ export default function Register() {
       return
     }
 
-    // Attempt register — backend endpoint may not exist in this MVP; handle gracefully
     try {
-      const payload = {
-        role,
-        fullName,
-        phone,
-        location,
-        estate,
-        password,
-      }
+      const payload = { role, fullName, phone, location, estate, password }
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -52,57 +45,62 @@ export default function Register() {
   }
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto' }}>
-      <div style={{ textAlign: 'center', marginBottom: 12 }}>
-        <img src="/logo192.png" alt="logo" style={{ height: 48 }} />
-        <h2>Register</h2>
-      </div>
-      <form onSubmit={submit} style={{ display: 'grid', gap: 8 }}>
-        <label>
-          Register as
-          <select value={role} onChange={(e) => setRole(e.target.value)}>
-            <option>Homeowner</option>
-            <option>Worker</option>
-          </select>
-        </label>
-
-        <label>
-          Full Name
-          <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full Name" />
-        </label>
-
-        <label>
-          Phone Number
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0712 345 678" />
-        </label>
-
-        <div style={{ display: 'flex', gap: 8 }}>
-          <label style={{ flex: 1 }}>
-            Location
-            <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Estate / Area" />
-          </label>
-          <label style={{ flex: 1 }}>
-            Estate / Area
-            <input value={estate} onChange={(e) => setEstate(e.target.value)} placeholder="Estate / Area" />
-          </label>
+    <div className="register-container">
+      <div className="register-card">
+        <div className="register-header">
+          <img src="/logo192.png" alt="logo" />
+          <h2>Register</h2>
+          <div className="register-sub">We'll use this to help you book a worker near you.</div>
         </div>
 
-        <label>
-          Password
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        </label>
+        <form className="register-form" onSubmit={submit}>
+          <div className="form-group">
+            <label>Register as</label>
+            <select className="form-control" value={role} onChange={(e) => setRole(e.target.value)}>
+              <option>Homeowner</option>
+              <option>Worker</option>
+            </select>
+          </div>
 
-        <label>
-          Confirm Password
-          <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
-        </label>
+          <div className="form-group">
+            <label>Full Name</label>
+            <input className="form-control" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full Name" />
+          </div>
 
-        <button type="submit" style={{ padding: '8px 12px', background: '#1565c0', color: '#fff', border: 'none' }}>Register</button>
-        {message && <div style={{ marginTop: 8 }}>{message}</div>}
-      </form>
-      <p style={{ marginTop: 12, textAlign: 'center' }}>
-        Already have an account? <a href="/login">Login</a>
-      </p>
+          <div className="form-group">
+            <label>Phone Number</label>
+            <input className="form-control" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0712 345 678" />
+          </div>
+
+          <div className="two-col">
+            <div className="form-group">
+              <label>Location</label>
+              <input className="form-control" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Estate / Area" />
+            </div>
+            <div className="form-group">
+              <label>Estate / Area</label>
+              <input className="form-control" value={estate} onChange={(e) => setEstate(e.target.value)} placeholder="Estate / Area" />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>Password</label>
+            <input className="form-control" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          </div>
+
+          <div className="form-group">
+            <label>Confirm Password</label>
+            <input className="form-control" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+          </div>
+
+          <button className="btn-primary" type="submit">Register</button>
+          {message && <div className={`message ${message.startsWith('Register failed') || message.startsWith('Register error') || message === 'Passwords do not match' ? 'error' : ''}`}>{message}</div>}
+        </form>
+
+        <div className="footer-note">
+          Already have an account? <a href="/login">Login</a>
+        </div>
+      </div>
     </div>
   )
 }
