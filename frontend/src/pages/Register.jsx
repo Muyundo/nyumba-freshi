@@ -58,7 +58,11 @@ export default function Register() {
         <div className="register-header">
           <img src="/logo192.png" alt="logo" />
           <h2>Register</h2>
-          <div className="register-sub">We'll use this to help you book a worker near you.</div>
+          <div className="register-sub">
+            {role === 'Worker'
+              ? "We'll use this to help connect you with home owners."
+              : "We'll use this to help you book a worker near you."}
+          </div>
         </div>
 
         <form className="register-form" onSubmit={submit}>
