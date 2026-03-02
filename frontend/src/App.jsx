@@ -1,24 +1,38 @@
-import React, { useEffect, useState } from 'react'
-import api from './api'
+import React from 'react'
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import Home from './pages/Home'
+import Login from './pages/Login'
+import Workers from './pages/Workers'
+import WorkerProfile from './pages/WorkerProfile'
+import Booking from './pages/Booking'
+import Dashboard from './pages/Dashboard'
+import Register from './pages/Register'
 
 export default function App() {
-  const [msg, setMsg] = useState(null)
-  const [error, setError] = useState(null)
-
-  useEffect(() => {
-    api.getHello()
-      .then((r) => setMsg(r.message))
-      .catch((e) => setError(e.message))
-  }, [])
-
   return (
-    <div className="app">
-      <h1>Nyumba Freshi</h1>
-      <p>React frontend scaffold</p>
-      <div>
-        <strong>Backend:</strong>{' '}
-        {msg ? <span>{msg}</span> : error ? <span style={{ color: 'red' }}>{error}</span> : <em>loading…</em>}
+    <BrowserRouter>
+      <div className="app">
+        <header style={{ padding: 12, borderBottom: '1px solid #eee' }}>
+          <nav style={{ display: 'flex', gap: 12 }}>
+            <Link to="/">Home</Link>
+            <Link to="/workers">Workers</Link>
+            <Link to="/login">Login</Link>
+            <Link to="/dashboard">Dashboard</Link>
+          </nav>
+        </header>
+
+        <main style={{ padding: 12 }}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/workers" element={<Workers />} />
+            <Route path="/workers/:id" element={<WorkerProfile />} />
+            <Route path="/booking/:workerId" element={<Booking />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+          </Routes>
+        </main>
       </div>
-    </div>
+    </BrowserRouter>
   )
 }
