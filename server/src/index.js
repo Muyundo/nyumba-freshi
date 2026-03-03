@@ -11,6 +11,10 @@ const port = process.env.PORT || 4000
 app.use(cors())
 app.use(express.json())
 
+function normalizePhone(phone) {
+  return String(phone || '').replace(/\D/g, '')
+}
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() })
 })
@@ -29,13 +33,36 @@ app.get('/api/dbtime', (req, res) => {
   }
 })
 
-// Demo login route: accepts { "username": "bob" } and returns a JWT
-app.post('/api/login', (req, res) => {
-  const { username } = req.body || {}
-  if (!username) return res.status(400).json({ error: 'username required' })
-  // In real apps validate credentials. This is a demo token.
-  const token = signToken({ username })
-  res.json({ token })
+app.post('/api/login', async (req, res) => {
+  const { role = 'Homeowner', phone, password } = req.body || {}
+  if (!phone || !password) return res.status(400).json({ error: 'phone and password required' })
+
+  try {
+    const normalizedPhone = normalizePhone(phone)
+    const findUser = db.prepare(
+      'SELECT id, role, full_name, phone, password_hash FROM users WHERE role = ? AND phone = ? LIMIT 1'
+    )
+    const user = findUser.get(role, normalizedPhone)
+
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' })
+
+    const isMatch = await bcrypt.compare(password, user.password_hash)
+    if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' })
+
+    const token = signToken({ userId: user.id, role: user.role, fullName: user.full_name })
+    return res.json({
+      token,
+      user: {
+        userId: user.id,
+        role: user.role,
+        fullName: user.full_name,
+        phone: user.phone,
+      },
+    })
+  } catch (err) {
+    console.error('Login error', err)
+    return res.status(500).json({ error: 'Login error' })
+  }
 })
 
 // Registration route: creates user and worker profile (if role=Worker)
@@ -56,6 +83,15 @@ app.post('/api/register', async (req, res) => {
 
   try {
     const passwordHash = await bcrypt.hash(password, 10)
+    const normalizedPhone = normalizePhone(phone)
+
+    const existingUser = db
+      .prepare('SELECT id FROM users WHERE role = ? AND phone = ? LIMIT 1')
+      .get(role, normalizedPhone)
+
+    if (existingUser) {
+      return res.status(409).json({ error: 'A user with this role and phone already exists' })
+    }
 
     // SQLite transaction
     const insertUser = db.prepare(
@@ -69,7 +105,7 @@ app.post('/api/register', async (req, res) => {
     )
 
     const transaction = db.transaction(() => {
-      const result = insertUser.run(role, fullName, phone, passwordHash, location || null, estate || null)
+      const result = insertUser.run(role, fullName, normalizedPhone, passwordHash, location || null, estate || null)
       const userId = result.lastInsertRowid
 
       if (role === 'Worker') {
@@ -87,8 +123,15 @@ app.post('/api/register', async (req, res) => {
     })
 
     const userId = transaction()
-    const token = signToken({ userId, role, fullName })
-    return res.json({ token })
+    return res.status(201).json({
+      message: 'Registered successfully. Please login.',
+      user: {
+        userId,
+        role,
+        fullName,
+        phone: normalizedPhone,
+      },
+    })
   } catch (err) {
     console.error('Registration error', err)
     return res.status(500).json({ error: 'Registration error' })
@@ -97,7 +140,8 @@ app.post('/api/register', async (req, res) => {
 
 // Protected demo route
 app.get('/api/protected', verifyTokenMiddleware, (req, res) => {
-  res.json({ message: `Hello ${req.user.username}`, user: req.user })
+  const name = req.user.fullName || req.user.username || 'User'
+  res.json({ message: `Hello ${name}`, user: req.user })
 })
 
 app.listen(port, () => {
