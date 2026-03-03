@@ -9,3 +9,7 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 server/.env
+
+# Database files
+*.db
+*.db-journal

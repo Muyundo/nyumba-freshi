@@ -1,6 +1,7 @@
+require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
-const pool = require('./db')
+const db = require('./db')
 const bcrypt = require('bcryptjs')
 const { signToken, verifyTokenMiddleware } = require('./auth')
 
@@ -18,10 +19,10 @@ app.get('/api/hello', (req, res) => {
   res.json({ message: 'Hello from Nyumba Freshi backend' })
 })
 
-app.get('/api/dbtime', async (req, res) => {
+app.get('/api/dbtime', (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT NOW() as now')
-    res.json({ now: rows[0].now })
+    const row = db.prepare("SELECT datetime('now') as now").get()
+    res.json({ now: row.now })
   } catch (err) {
     console.error('DB query failed', err)
     res.status(500).json({ error: 'DB query failed' })
@@ -56,75 +57,38 @@ app.post('/api/register', async (req, res) => {
   try {
     const passwordHash = await bcrypt.hash(password, 10)
 
-    const conn = await pool.getConnection()
-    try {
-      await conn.beginTransaction()
+    // SQLite transaction
+    const insertUser = db.prepare(
+      'INSERT INTO users (role, full_name, phone, password_hash, location, estate) VALUES (?, ?, ?, ?, ?, ?)'
+    )
+    const insertWorkerProfile = db.prepare(
+      'INSERT INTO worker_profiles (user_id, id_number, availability) VALUES (?, ?, ?)'
+    )
+    const insertWorkerService = db.prepare(
+      'INSERT INTO worker_services (worker_profile_id, service) VALUES (?, ?)'
+    )
 
-      // Create minimal tables if they don't exist (MVP-friendly)
-      await conn.query(`
-        CREATE TABLE IF NOT EXISTS users (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          role VARCHAR(32),
-          full_name VARCHAR(255),
-          phone VARCHAR(64),
-          password_hash VARCHAR(255),
-          location VARCHAR(255),
-          estate VARCHAR(255),
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB
-      `)
-
-      await conn.query(`
-        CREATE TABLE IF NOT EXISTS worker_profiles (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          user_id INT,
-          id_number VARCHAR(128),
-          availability VARCHAR(32),
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          INDEX (user_id)
-        ) ENGINE=InnoDB
-      `)
-
-      await conn.query(`
-        CREATE TABLE IF NOT EXISTS worker_services (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          worker_profile_id INT,
-          service VARCHAR(64),
-          INDEX (worker_profile_id)
-        ) ENGINE=InnoDB
-      `)
-
-      const [r] = await conn.query(
-        'INSERT INTO users (role, full_name, phone, password_hash, location, estate) VALUES (?, ?, ?, ?, ?, ?)',
-        [role, fullName, phone, passwordHash, location || null, estate || null]
-      )
-
-      const userId = r.insertId
+    const transaction = db.transaction(() => {
+      const result = insertUser.run(role, fullName, phone, passwordHash, location || null, estate || null)
+      const userId = result.lastInsertRowid
 
       if (role === 'Worker') {
-        const [wp] = await conn.query(
-          'INSERT INTO worker_profiles (user_id, id_number, availability) VALUES (?, ?, ?)',
-          [userId, idNumber || null, availability || null]
-        )
-        const profileId = wp.insertId
+        const workerResult = insertWorkerProfile.run(userId, idNumber || null, availability || null)
+        const profileId = workerResult.lastInsertRowid
+        
         if (Array.isArray(servicesOffered)) {
-          for (const s of servicesOffered) {
-            await conn.query('INSERT INTO worker_services (worker_profile_id, service) VALUES (?, ?)', [profileId, s])
+          for (const service of servicesOffered) {
+            insertWorkerService.run(profileId, service)
           }
         }
       }
 
-      await conn.commit()
-      conn.release()
+      return userId
+    })
 
-      const token = signToken({ userId, role, fullName })
-      return res.json({ token })
-    } catch (err) {
-      await conn.rollback()
-      conn.release()
-      console.error('Registration failed', err)
-      return res.status(500).json({ error: 'Registration failed' })
-    }
+    const userId = transaction()
+    const token = signToken({ userId, role, fullName })
+    return res.json({ token })
   } catch (err) {
     console.error('Registration error', err)
     return res.status(500).json({ error: 'Registration error' })
