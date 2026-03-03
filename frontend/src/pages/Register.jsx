@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import api from '../api'
 import './Register.css'
 
@@ -14,6 +15,7 @@ export default function Register() {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [message, setMessage] = useState(null)
+  const navigate = useNavigate()
 
   const submit = async (e) => {
     e.preventDefault()
@@ -34,19 +36,14 @@ export default function Register() {
         payload.servicesOffered = Object.keys(servicesOffered).filter((k) => servicesOffered[k])
         payload.availability = availability
       }
-      const res = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+      await api.register(payload)
+      navigate('/login', {
+        state: {
+          fromRegister: true,
+          role,
+          phone,
+        },
       })
-      if (res.ok) {
-        const data = await res.json()
-        if (data.token) localStorage.setItem('token', data.token)
-        setMessage('Registered successfully (demo).')
-      } else {
-        const txt = await res.text()
-        setMessage('Register failed: ' + txt)
-      }
     } catch (err) {
       setMessage('Register error: ' + err.message)
     }
@@ -142,7 +139,7 @@ export default function Register() {
         </form>
 
         <div className="footer-note">
-          Already have an account? <a href="/login">Login</a>
+          Already have an account? <Link to="/login">Login</Link>
         </div>
       </div>
     </div>
