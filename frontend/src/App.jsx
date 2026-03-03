@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Workers from './pages/Workers'
@@ -7,6 +7,17 @@ import WorkerProfile from './pages/WorkerProfile'
 import Booking from './pages/Booking'
 import Dashboard from './pages/Dashboard'
 import Register from './pages/Register'
+
+function ProtectedRoute({ children }) {
+  const token = localStorage.getItem('token')
+  const currentUser = localStorage.getItem('currentUser')
+
+  if (!token || !currentUser) {
+    return <Navigate to="/login" replace />
+  }
+
+  return children
+}
 
 export default function App() {
   return (
@@ -29,7 +40,14 @@ export default function App() {
             <Route path="/workers" element={<Workers />} />
             <Route path="/workers/:id" element={<WorkerProfile />} />
             <Route path="/booking/:workerId" element={<Booking />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </main>
       </div>
