@@ -14,12 +14,20 @@ export function getHello() {
   return request('/api/hello')
 }
 
-export function login(username) {
+export function login({ role, phone, password }) {
   return request('/api/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username }),
+    body: JSON.stringify({ role, phone, password }),
   })
 }
 
-export default { getHello, login }
+export function register(payload) {
+  return request('/api/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+export default { getHello, login, register }
