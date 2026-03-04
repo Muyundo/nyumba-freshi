@@ -147,10 +147,10 @@ export default function Dashboard() {
                   <span className="btn-icon">👥</span>
                   Find Workers
                 </button>
-                <div className="view-bookings-card" onClick={() => setActiveTab('myBookings')}>
-                  <span className="card-icon">📋</span>
-                  <span className="card-text">View My<br />Bookings</span>
-                </div>
+                <button className="btn-secondary" onClick={() => setActiveTab('myBookings')}>
+                  <span className="btn-icon">📋</span>
+                  View My Bookings
+                </button>
               </div>
             </div>
 
