@@ -16,6 +16,29 @@
   margin-bottom: 2rem;
 }
 
+.workers-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.workers-filter-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.workers-filter-select {
+  min-width: 220px;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  color: #1f2937;
+  background-color: #fff;
+}
+
 .loading-message,
 .error-message,
 .empty-message {
@@ -111,6 +134,16 @@
 @media (max-width: 768px) {
   .workers-container {
     padding: 1rem;
+  }
+
+  .workers-filter-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .workers-filter-select {
+    width: 100%;
+    min-width: unset;
   }
 
   .workers-container h2 {

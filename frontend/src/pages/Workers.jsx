@@ -1,18 +1,38 @@
 import React, { useEffect, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import api from '../api'
 import './Workers.css'
 
-function useQuery() {
-  return new URLSearchParams(useLocation().search)
+function normalizeServiceKey(service) {
+  const value = String(service || '').toLowerCase().trim()
+  if (value.includes('clean')) return 'cleaning'
+  if (value.includes('laundry')) return 'laundry'
+  return value
+}
+
+function getReadableServiceFilter(service) {
+  if (service === 'cleaning') return 'House Cleaning'
+  if (service === 'laundry') return 'Laundry'
+  if (service === 'both') return 'Cleaning + Laundry'
+  return service
 }
 
 export default function Workers() {
-  const q = useQuery()
-  const service = q.get('service')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const rawService = searchParams.get('service') || 'all'
+  const serviceFilter = normalizeServiceKey(rawService)
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  const handleFilterChange = (event) => {
+    const nextFilter = event.target.value
+    if (nextFilter === 'all') {
+      setSearchParams({})
+      return
+    }
+    setSearchParams({ service: nextFilter })
+  }
 
   useEffect(() => {
     const fetchWorkers = async () => {
@@ -23,10 +43,17 @@ export default function Workers() {
         
         // Filter by service if provided
         let filteredWorkers = workers
-        if (service) {
-          filteredWorkers = workers.filter((w) => 
-            w.services && w.services.some(s => s.toLowerCase() === service.toLowerCase())
-          )
+        if (serviceFilter !== 'all') {
+          const normalizedFilter = normalizeServiceKey(serviceFilter)
+          filteredWorkers = workers.filter((w) => {
+            const workerServices = (w.services || []).map((item) => normalizeServiceKey(item))
+
+            if (normalizedFilter === 'both') {
+              return workerServices.includes('cleaning') && workerServices.includes('laundry')
+            }
+
+            return workerServices.includes(normalizedFilter)
+          })
         }
         
         setList(filteredWorkers)
@@ -39,19 +66,34 @@ export default function Workers() {
     }
 
     fetchWorkers()
-  }, [service])
+  }, [serviceFilter])
 
   return (
     <div className="workers-container">
       <h2>Workers</h2>
-      {service && <p>Filtering by service: {service}</p>}
+      <div className="workers-filter-bar">
+        <label className="workers-filter-label" htmlFor="serviceFilter">Filter by service</label>
+        <select
+          id="serviceFilter"
+          className="workers-filter-select"
+          value={serviceFilter}
+          onChange={handleFilterChange}
+        >
+          <option value="all">All Services</option>
+          <option value="cleaning">House Cleaning</option>
+          <option value="laundry">Laundry</option>
+          <option value="both">Cleaning + Laundry</option>
+        </select>
+      </div>
+
+      {serviceFilter !== 'all' && <p>Filtering by service: {getReadableServiceFilter(serviceFilter)}</p>}
       
       {loading && <p className="loading-message">Loading workers...</p>}
       {error && <p className="error-message">{error}</p>}
       
       {!loading && list.length === 0 && (
         <p className="empty-message">
-          {service ? 'No workers found for this service.' : 'No workers available.'}
+          {serviceFilter !== 'all' ? 'No workers found for this service.' : 'No workers available.'}
         </p>
       )}
       

@@ -25,6 +25,33 @@
   gap: 0.5rem;
 }
 
+.service-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.service-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  color: #374151;
+  background: #f9fafb;
+}
+
+.service-option input {
+  margin: 0;
+}
+
+.booking-error {
+  color: #b91c1c;
+  font-size: 0.9rem;
+}
+
 .booking-form-group label {
   font-size: 0.95rem;
   font-weight: 600;
@@ -103,5 +130,9 @@
   .booking-form-group input,
   .booking-form-group textarea {
     font-size: 16px;
+  }
+
+  .service-options {
+    flex-direction: column;
   }
 }
