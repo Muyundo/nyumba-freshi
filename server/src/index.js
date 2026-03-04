@@ -144,6 +144,86 @@ app.get('/api/protected', verifyTokenMiddleware, (req, res) => {
   res.json({ message: `Hello ${name}`, user: req.user })
 })
 
+// Get all workers with their services
+app.get('/api/workers', (req, res) => {
+  try {
+    const query = db.prepare(`
+      SELECT 
+        u.id,
+        u.full_name,
+        u.phone,
+        u.location,
+        u.estate,
+        wp.id as profile_id,
+        GROUP_CONCAT(ws.service, ',') as services
+      FROM users u
+      LEFT JOIN worker_profiles wp ON u.id = wp.user_id
+      LEFT JOIN worker_services ws ON wp.id = ws.worker_profile_id
+      WHERE u.role = 'Worker'
+      GROUP BY u.id
+    `)
+    const workers = query.all()
+    
+    // Transform services string into array
+    const transformedWorkers = workers.map(w => ({
+      id: w.id,
+      fullName: w.full_name,
+      phone: w.phone,
+      location: w.location,
+      estate: w.estate,
+      services: w.services ? w.services.split(',') : []
+    }))
+    
+    res.json(transformedWorkers)
+  } catch (err) {
+    console.error('Get workers error', err)
+    res.status(500).json({ error: 'Failed to fetch workers' })
+  }
+})
+
+// Get single worker details
+app.get('/api/workers/:id', (req, res) => {
+  try {
+    const { id } = req.params
+    const query = db.prepare(`
+      SELECT 
+        u.id,
+        u.full_name,
+        u.phone,
+        u.location,
+        u.estate,
+        wp.id as profile_id,
+        wp.id_number,
+        wp.availability,
+        GROUP_CONCAT(ws.service, ',') as services
+      FROM users u
+      LEFT JOIN worker_profiles wp ON u.id = wp.user_id
+      LEFT JOIN worker_services ws ON wp.id = ws.worker_profile_id
+      WHERE u.role = 'Worker' AND u.id = ?
+      GROUP BY u.id
+    `)
+    const worker = query.get(id)
+    
+    if (!worker) {
+      return res.status(404).json({ error: 'Worker not found' })
+    }
+    
+    res.json({
+      id: worker.id,
+      fullName: worker.full_name,
+      phone: worker.phone,
+      location: worker.location,
+      estate: worker.estate,
+      idNumber: worker.id_number,
+      availability: worker.availability,
+      services: worker.services ? worker.services.split(',') : []
+    })
+  } catch (err) {
+    console.error('Get worker error', err)
+    res.status(500).json({ error: 'Failed to fetch worker' })
+  }
+})
+
 app.listen(port, () => {
   console.log(`Nyumba Freshi backend running on http://localhost:${port}`)
 })

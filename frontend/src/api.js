@@ -30,4 +30,12 @@ export function register(payload) {
   })
 }
 
-export default { getHello, login, register }
+export function getWorkers() {
+  return request('/api/workers')
+}
+
+export function getWorker(id) {
+  return request(`/api/workers/${id}`)
+}
+
+export default { getHello, login, register, getWorkers, getWorker }
