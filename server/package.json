@@ -5,7 +5,8 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon --watch src --exec node src/index.js"
+    "dev": "nodemon --watch src --exec node src/index.js",
+    "ngrok": "ngrok http 4000"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

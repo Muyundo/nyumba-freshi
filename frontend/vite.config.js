@@ -11,10 +11,13 @@ export default defineConfig({
     proxy: {
       // Proxy API requests to the backend during development
       '/api': {
-        target: 'http://localhost:4000',
+        target: process.env.VITE_API_URL || 'http://localhost:4000',
         changeOrigin: true,
         secure: false,
       },
     },
+  },
+  define: {
+    'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || ''),
   },
 })
