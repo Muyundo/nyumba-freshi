@@ -304,8 +304,13 @@ app.get('/api/homeowners/:homeownerId/bookings', verifyTokenMiddleware, (req, re
 })
 
 // Get bookings for a worker
-app.get('/api/workers/:workerId/bookings', (req, res) => {
+app.get('/api/workers/:workerId/bookings', verifyTokenMiddleware, (req, res) => {
   const { workerId } = req.params
+  const requesterId = String(req.user.userId)
+
+  if (requesterId !== String(workerId)) {
+    return res.status(403).json({ error: 'Not authorized to view these bookings' })
+  }
 
   try {
     const query = db.prepare(`
@@ -345,14 +350,14 @@ app.get('/api/workers/:workerId/bookings', (req, res) => {
   }
 })
 
-// Accept or decline a booking
+// Accept, decline, or cancel a booking
 app.patch('/api/bookings/:bookingId', verifyTokenMiddleware, (req, res) => {
   const { bookingId } = req.params
   const { status } = req.body || {}
   const workerId = req.user.userId
 
-  if (!status || !['accepted', 'declined'].includes(status)) {
-    return res.status(400).json({ error: 'status must be accepted or declined' })
+  if (!status || !['accepted', 'declined', 'cancelled'].includes(status)) {
+    return res.status(400).json({ error: 'status must be accepted, declined, or cancelled' })
   }
 
   try {

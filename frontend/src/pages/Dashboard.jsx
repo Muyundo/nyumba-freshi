@@ -29,8 +29,10 @@ export default function Dashboard() {
   }
 
   const formatStatusLabel = (status) => {
-    if (status === 'accepted') return 'Booking Accepted'
-    if (status === 'declined') return 'Booking Declined'
+    const normalizedStatus = String(status || '').toLowerCase().trim()
+    if (normalizedStatus === 'accepted') return 'Booking Accepted'
+    if (normalizedStatus === 'declined') return 'Booking Declined'
+    if (normalizedStatus === 'cancelled') return 'Booking Cancelled'
     return 'Booking Pending'
   }
 
@@ -65,7 +67,10 @@ export default function Dashboard() {
     return () => clearInterval(refreshTimer)
   }, [homeownerId])
 
-  const upcomingBookings = bookings.filter((booking) => booking.status === 'pending' || booking.status === 'accepted')
+  const upcomingBookings = bookings.filter((booking) => {
+    const normalizedStatus = String(booking.status || '').toLowerCase().trim()
+    return ['pending', 'accepted', 'declined', 'cancelled'].includes(normalizedStatus)
+  })
 
   return (
     <div className="dashboard-container">
@@ -112,7 +117,7 @@ export default function Dashboard() {
                           {booking.service} <span className="booking-worker">with {booking.workerName || 'Worker'}</span>
                         </h3>
                         <p className="booking-datetime">{booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString() : 'N/A'}</p>
-                        <p className={`booking-status status-${booking.status}`}>
+                        <p className={`booking-status status-${String(booking.status || '').toLowerCase().trim()}`}>
                           Status: {formatStatusLabel(booking.status)}
                         </p>
                       </div>
@@ -158,7 +163,7 @@ export default function Dashboard() {
                           {booking.service} <span className="booking-worker">with {booking.workerName || 'Worker'}</span>
                         </h3>
                         <p className="booking-datetime">{booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString() : 'N/A'}</p>
-                        <p className={`booking-status status-${booking.status}`}>
+                        <p className={`booking-status status-${String(booking.status || '').toLowerCase().trim()}`}>
                           Status: {formatStatusLabel(booking.status)}
                         </p>
                       </div>

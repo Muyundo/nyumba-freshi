@@ -251,6 +251,10 @@
   color: #dc2626;
 }
 
+.status-cancelled {
+  color: #64748b;
+}
+
 .status-in-progress {
   color: #0891b2;
 }
@@ -304,6 +308,28 @@
 }
 
 .btn-decline:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-cancel {
+  background-color: #64748b;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background-color: #475569;
+  transform: translateY(-2px);
+}
+
+.btn-cancel:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
@@ -428,6 +454,7 @@
 
   .btn-accept,
   .btn-decline,
+  .btn-cancel,
   .btn-complete,
   .btn-reschedule {
     width: 100%;

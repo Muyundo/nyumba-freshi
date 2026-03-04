@@ -24,6 +24,7 @@ export default function WorkerDashboard() {
   const formatStatusLabel = (status) => {
     if (status === 'accepted') return 'Booking Accepted'
     if (status === 'declined') return 'Booking Declined'
+    if (status === 'cancelled') return 'Booking Cancelled'
     return 'Booking Pending'
   }
 
@@ -53,7 +54,16 @@ export default function WorkerDashboard() {
         setBookings((workerBookings || []).map(mapBooking))
       } catch (err) {
         console.error('Load bookings error', err)
-        setError('Failed to load job requests')
+        const message = String(err?.message || '')
+        if (message.includes('401') || message.includes('403')) {
+          setError('Session expired or unauthorized. Please log in again.')
+          localStorage.removeItem('token')
+          localStorage.removeItem('currentUser')
+          localStorage.removeItem('userRole')
+          navigate('/login')
+        } else {
+          setError('Failed to load job requests')
+        }
       } finally {
         if (showLoader) {
           setLoading(false)
@@ -71,7 +81,7 @@ export default function WorkerDashboard() {
   }, [workerId])
 
   const jobRequests = bookings.filter((booking) => booking.status === 'pending')
-  const processedBookings = bookings.filter((booking) => booking.status === 'accepted' || booking.status === 'declined')
+  const acceptedJobs = bookings.filter((booking) => booking.status === 'accepted')
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -89,7 +99,7 @@ export default function WorkerDashboard() {
       )))
     } catch (err) {
       console.error('Accept booking error', err)
-      alert('Failed to accept booking')
+      alert(err?.message || 'Failed to accept booking')
     } finally {
       setProcessingId(null)
     }
@@ -104,7 +114,22 @@ export default function WorkerDashboard() {
       )))
     } catch (err) {
       console.error('Decline booking error', err)
-      alert('Failed to decline booking')
+      alert(err?.message || 'Failed to decline booking')
+    } finally {
+      setProcessingId(null)
+    }
+  }
+
+  const handleCancelJob = async (bookingId) => {
+    setProcessingId(bookingId)
+    try {
+      await api.updateBookingStatus(bookingId, 'cancelled')
+      setBookings((prev) => prev.map((booking) => (
+        booking.id === bookingId ? { ...booking, status: 'cancelled' } : booking
+      )))
+    } catch (err) {
+      console.error('Cancel booking error', err)
+      alert(err?.message || 'Failed to cancel booking')
     } finally {
       setProcessingId(null)
     }
@@ -208,15 +233,15 @@ export default function WorkerDashboard() {
             {/* Your Jobs tab */}
             <div className="welcome-section">
               <h1 className="welcome-title">Your Jobs</h1>
-              <p className="welcome-subtitle">Track accepted and declined bookings</p>
+              <p className="welcome-subtitle">Track and manage your accepted bookings</p>
             </div>
 
             <section className="active-jobs-section">
               {loading ? (
                 <div className="loading-message">Loading bookings...</div>
-              ) : processedBookings.length > 0 ? (
+              ) : acceptedJobs.length > 0 ? (
                 <div className="jobs-list">
-                  {processedBookings.map((job) => (
+                  {acceptedJobs.map((job) => (
                     <div key={job.id} className="job-card">
                       <div className="job-image">👤</div>
                       <div className="job-info">
@@ -230,11 +255,20 @@ export default function WorkerDashboard() {
                           Status: {formatStatusLabel(job.status)}
                         </p>
                       </div>
+                      <div className="job-actions">
+                        <button
+                          className="btn-cancel"
+                          onClick={() => handleCancelJob(job.id)}
+                          disabled={processingId === job.id}
+                        >
+                          {processingId === job.id ? '...' : 'Cancel'}
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="empty-state">No accepted or declined bookings yet.</div>
+                <div className="empty-state">No accepted bookings yet.</div>
               )}
             </section>
           </>

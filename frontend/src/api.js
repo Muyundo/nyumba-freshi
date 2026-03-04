@@ -52,7 +52,10 @@ export function createBooking(payload) {
 }
 
 export function getWorkerBookings(workerId) {
-  return request(`/api/workers/${workerId}/bookings`)
+  return request(`/api/workers/${workerId}/bookings`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  })
 }
 
 export function getHomeownerBookings(homeownerId) {
