@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "vite",
+    "dev:public": "vite --host 0.0.0.0 --port 5173",
+    "tunnel": "npx localtunnel --port 5173",
     "build": "vite build",
     "preview": "vite preview"
   },

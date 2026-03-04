@@ -7,6 +7,7 @@ const { signToken, verifyTokenMiddleware } = require('./auth')
 
 const app = express()
 const port = process.env.PORT || 4000
+const host = process.env.HOST || '0.0.0.0'
 
 app.use(cors())
 app.use(express.json())
@@ -383,6 +384,6 @@ app.patch('/api/bookings/:bookingId', verifyTokenMiddleware, (req, res) => {
   }
 })
 
-app.listen(port, () => {
-  console.log(`Nyumba Freshi backend running on http://localhost:${port}`)
+app.listen(port, host, () => {
+  console.log(`Nyumba Freshi backend running on http://${host}:${port}`)
 })
