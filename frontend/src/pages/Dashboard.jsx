@@ -17,6 +17,7 @@ export default function Dashboard() {
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('currentUser')
+    localStorage.removeItem('userRole')
     navigate('/login')
   }
 

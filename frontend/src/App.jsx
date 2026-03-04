@@ -6,6 +6,7 @@ import Workers from './pages/Workers'
 import WorkerProfile from './pages/WorkerProfile'
 import Booking from './pages/Booking'
 import Dashboard from './pages/Dashboard'
+import WorkerDashboard from './pages/WorkerDashboard'
 import Register from './pages/Register'
 
 function ProtectedRoute({ children }) {
@@ -17,6 +18,16 @@ function ProtectedRoute({ children }) {
   }
 
   return children
+}
+
+function DashboardRouter() {
+  const userRole = localStorage.getItem('userRole')
+  
+  if (userRole === 'Worker') {
+    return <WorkerDashboard />
+  }
+  
+  return <Dashboard />
 }
 
 export default function App() {
@@ -36,7 +47,7 @@ export default function App() {
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <DashboardRouter />
                 </ProtectedRoute>
               }
             />

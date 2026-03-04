@@ -30,6 +30,7 @@ export default function Login() {
       const res = await api.login({ role, phone, password })
       if (res.token) localStorage.setItem('token', res.token)
       if (res.user) localStorage.setItem('currentUser', JSON.stringify(res.user))
+      localStorage.setItem('userRole', role)
       navigate('/dashboard')
     } catch (err) {
       setMessage('Login failed: Invalid credentials or user does not exist')
