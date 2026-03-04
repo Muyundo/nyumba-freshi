@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Workers from './pages/Workers'
@@ -19,29 +19,10 @@ function ProtectedRoute({ children }) {
   return children
 }
 
-function Header() {
-  const location = useLocation()
-  const hideNav = location.pathname === '/login' || location.pathname === '/register'
-
-  return (
-    <header style={{ padding: 12, borderBottom: '1px solid #eee' }}>
-      {!hideNav && (
-        <nav style={{ display: 'flex', gap: 12 }}>
-          <Link to="/">Home</Link>
-          <Link to="/workers">Workers</Link>
-          <Link to="/login">Login</Link>
-          <Link to="/dashboard">Dashboard</Link>
-        </nav>
-      )}
-    </header>
-  )
-}
-
 export default function App() {
   return (
     <BrowserRouter>
       <div className="app">
-        <Header />
 
         <main style={{ padding: 12 }}>
           <Routes>
