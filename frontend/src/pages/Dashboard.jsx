@@ -1,18 +1,25 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import api from '../api'
 import './Dashboard.css'
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('bookings')
+  const [bookings, setBookings] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
   const userData = localStorage.getItem('currentUser')
   let currentUser = null
   try {
     currentUser = userData ? JSON.parse(userData) : null
-  } catch (error) {
+  } catch (parseError) {
     currentUser = null
   }
+
   const displayName = currentUser?.fullName || 'User'
+  const homeownerId = currentUser?.userId || currentUser?.id
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -21,53 +28,56 @@ export default function Dashboard() {
     navigate('/login')
   }
 
-  // Demo data for upcoming bookings
-  const upcomingBookings = [
-    { 
-      id: 1, 
-      service: 'Cleaning Service',
-      worker: 'Grace A.',
-      date: 'Tomorrow',
-      time: '10:00 AM',
-      status: 'Accepted',
-      image: '👩‍🔧'
-    },
-    { 
-      id: 2, 
-      service: 'Plumbing Repair',
-      worker: 'John M.',
-      date: 'March 7',
-      time: '2:00 PM',
-      status: 'Pending',
-      image: '👨‍🔧'
-    }
-  ]
+  const formatStatusLabel = (status) => {
+    if (status === 'accepted') return 'Booking Accepted'
+    if (status === 'declined') return 'Booking Declined'
+    return 'Booking Pending'
+  }
 
-  const allBookings = [
-    ...upcomingBookings,
-    { 
-      id: 3, 
-      service: 'Electrical Work',
-      worker: 'Sarah K.',
-      date: 'March 1',
-      time: '9:00 AM',
-      status: 'Completed',
-      image: '👩‍💼'
+  useEffect(() => {
+    const loadBookings = async (showLoader = true) => {
+      if (!homeownerId) {
+        setError('Homeowner session not found. Please log in again.')
+        setLoading(false)
+        return
+      }
+
+      if (showLoader) {
+        setLoading(true)
+      }
+      setError('')
+
+      try {
+        const homeownerBookings = await api.getHomeownerBookings(homeownerId)
+        setBookings(homeownerBookings || [])
+      } catch (loadError) {
+        console.error('Load homeowner bookings error', loadError)
+        setError('Failed to load your bookings')
+      } finally {
+        if (showLoader) {
+          setLoading(false)
+        }
+      }
     }
-  ]
+
+    loadBookings()
+    const refreshTimer = setInterval(() => loadBookings(false), 15000)
+    return () => clearInterval(refreshTimer)
+  }, [homeownerId])
+
+  const upcomingBookings = bookings.filter((booking) => booking.status === 'pending' || booking.status === 'accepted')
 
   return (
     <div className="dashboard-container">
-      {/* Header with navigation */}
       <header className="dashboard-header">
         <div className="nav-tabs">
-          <button 
+          <button
             className={`nav-tab ${activeTab === 'bookings' ? 'active' : ''}`}
             onClick={() => setActiveTab('bookings')}
           >
             Find Workers
           </button>
-          <button 
+          <button
             className={`nav-tab ${activeTab === 'myBookings' ? 'active' : ''}`}
             onClick={() => setActiveTab('myBookings')}
           >
@@ -79,41 +89,41 @@ export default function Dashboard() {
         </button>
       </header>
 
-      {/* Main content */}
       <main className="dashboard-main">
         {activeTab === 'bookings' ? (
           <>
-            {/* Welcome section */}
             <div className="welcome-section">
               <h1 className="welcome-title">Welcome back, {displayName}!</h1>
               <p className="welcome-subtitle">What can we help you with today?</p>
             </div>
 
-            {/* Upcoming bookings */}
-            {upcomingBookings.length > 0 && (
+            {error && <div className="dashboard-message error">{error}</div>}
+            {loading ? (
+              <div className="dashboard-message">Loading bookings...</div>
+            ) : upcomingBookings.length > 0 ? (
               <section className="upcoming-section">
-                <h2 className="section-title">📅 Upcoming Booking</h2>
+                <h2 className="section-title">📅 Upcoming Booking{upcomingBookings.length > 1 ? 's' : ''}</h2>
                 <div className="bookings-list">
                   {upcomingBookings.map((booking) => (
                     <div key={booking.id} className="booking-card">
-                      <div className="booking-image">{booking.image}</div>
+                      <div className="booking-image">👷</div>
                       <div className="booking-info">
                         <h3 className="booking-service">
-                          {booking.service} <span className="booking-worker">with {booking.worker}</span>
+                          {booking.service} <span className="booking-worker">with {booking.workerName || 'Worker'}</span>
                         </h3>
-                        <p className="booking-datetime">{booking.date}, {booking.time}</p>
-                        <p className={`booking-status status-${booking.status.toLowerCase()}`}>
-                          Status: {booking.status} 
-                          {booking.status === 'Accepted' && ' ✓'}
+                        <p className="booking-datetime">{booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString() : 'N/A'}</p>
+                        <p className={`booking-status status-${booking.status}`}>
+                          Status: {formatStatusLabel(booking.status)}
                         </p>
                       </div>
                     </div>
                   ))}
                 </div>
               </section>
+            ) : (
+              <div className="dashboard-message">No upcoming bookings yet.</div>
             )}
 
-            {/* Action cards */}
             <section className="actions-section">
               <div className="action-card find-workers" onClick={() => navigate('/workers')}>
                 <div className="action-icon">🔍</div>
@@ -129,32 +139,36 @@ export default function Dashboard() {
           </>
         ) : (
           <>
-            {/* My Bookings tab */}
             <div className="welcome-section">
               <h1 className="welcome-title">My Bookings</h1>
               <p className="welcome-subtitle">Track all your service bookings</p>
             </div>
 
-            <section className="bookings-section">
-              <div className="bookings-list">
-                {allBookings.map((booking) => (
-                  <div key={booking.id} className="booking-card">
-                    <div className="booking-image">{booking.image}</div>
-                    <div className="booking-info">
-                      <h3 className="booking-service">
-                        {booking.service} <span className="booking-worker">with {booking.worker}</span>
-                      </h3>
-                      <p className="booking-datetime">{booking.date}, {booking.time}</p>
-                      <p className={`booking-status status-${booking.status.toLowerCase()}`}>
-                        Status: {booking.status}
-                        {booking.status === 'Accepted' && ' ✓'}
-                        {booking.status === 'Completed' && ' ✓✓'}
-                      </p>
+            {error && <div className="dashboard-message error">{error}</div>}
+            {loading ? (
+              <div className="dashboard-message">Loading bookings...</div>
+            ) : bookings.length > 0 ? (
+              <section className="bookings-section">
+                <div className="bookings-list">
+                  {bookings.map((booking) => (
+                    <div key={booking.id} className="booking-card">
+                      <div className="booking-image">👷</div>
+                      <div className="booking-info">
+                        <h3 className="booking-service">
+                          {booking.service} <span className="booking-worker">with {booking.workerName || 'Worker'}</span>
+                        </h3>
+                        <p className="booking-datetime">{booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString() : 'N/A'}</p>
+                        <p className={`booking-status status-${booking.status}`}>
+                          Status: {formatStatusLabel(booking.status)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+                  ))}
+                </div>
+              </section>
+            ) : (
+              <div className="dashboard-message">No bookings found yet.</div>
+            )}
           </>
         )}
       </main>

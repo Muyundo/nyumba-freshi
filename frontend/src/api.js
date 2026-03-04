@@ -55,6 +55,13 @@ export function getWorkerBookings(workerId) {
   return request(`/api/workers/${workerId}/bookings`)
 }
 
+export function getHomeownerBookings(homeownerId) {
+  return request(`/api/homeowners/${homeownerId}/bookings`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  })
+}
+
 export function updateBookingStatus(bookingId, status) {
   return request(`/api/bookings/${bookingId}`, {
     method: 'PATCH',
@@ -63,4 +70,14 @@ export function updateBookingStatus(bookingId, status) {
   })
 }
 
-export default { getHello, login, register, getWorkers, getWorker, createBooking, getWorkerBookings, updateBookingStatus }
+export default {
+  getHello,
+  login,
+  register,
+  getWorkers,
+  getWorker,
+  createBooking,
+  getWorkerBookings,
+  getHomeownerBookings,
+  updateBookingStatus,
+}

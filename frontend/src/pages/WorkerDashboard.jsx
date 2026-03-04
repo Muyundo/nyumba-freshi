@@ -6,7 +6,7 @@ import './WorkerDashboard.css'
 export default function WorkerDashboard() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('requests')
-  const [jobRequests, setJobRequests] = useState([])
+  const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [processingId, setProcessingId] = useState(null)
@@ -19,37 +19,59 @@ export default function WorkerDashboard() {
     currentUser = null
   }
   const displayName = currentUser?.fullName || 'Worker'
-  const workerId = currentUser?.id
+  const workerId = currentUser?.userId || currentUser?.id
+
+  const formatStatusLabel = (status) => {
+    if (status === 'accepted') return 'Booking Accepted'
+    if (status === 'declined') return 'Booking Declined'
+    return 'Booking Pending'
+  }
+
+  const mapBooking = (booking) => ({
+    id: booking.id,
+    service: booking.service,
+    homeowner: booking.homeownerName || 'Unknown Homeowner',
+    homeownerPhone: booking.homeownerPhone || '',
+    date: booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString() : 'N/A',
+    notes: booking.notes,
+    status: booking.status,
+  })
 
   useEffect(() => {
-    const loadBookings = async () => {
-      if (!workerId) return
-      setLoading(true)
+    const loadBookings = async (showLoader = true) => {
+      if (!workerId) {
+        setError('Worker session not found. Please log in again.')
+        setLoading(false)
+        return
+      }
+      if (showLoader) {
+        setLoading(true)
+      }
       setError('')
       try {
-        const bookings = await api.getWorkerBookings(workerId)
-        const pendingBookings = bookings.filter(b => b.status === 'pending') || []
-        setJobRequests(
-          pendingBookings.map(b => ({
-            id: b.id,
-            service: b.service,
-            homeowner: b.homeownerName || 'Unknown Homeowner',
-            homeownerPhone: b.homeownerPhone || '',
-            date: new Date(b.bookingDate).toLocaleDateString(),
-            notes: b.notes,
-            status: 'Pending'
-          }))
-        )
+        const workerBookings = await api.getWorkerBookings(workerId)
+        setBookings((workerBookings || []).map(mapBooking))
       } catch (err) {
         console.error('Load bookings error', err)
         setError('Failed to load job requests')
       } finally {
-        setLoading(false)
+        if (showLoader) {
+          setLoading(false)
+        }
       }
     }
 
     loadBookings()
+
+    const refreshTimer = setInterval(() => {
+      loadBookings(false)
+    }, 15000)
+
+    return () => clearInterval(refreshTimer)
   }, [workerId])
+
+  const jobRequests = bookings.filter((booking) => booking.status === 'pending')
+  const processedBookings = bookings.filter((booking) => booking.status === 'accepted' || booking.status === 'declined')
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -62,8 +84,9 @@ export default function WorkerDashboard() {
     setProcessingId(bookingId)
     try {
       await api.updateBookingStatus(bookingId, 'accepted')
-      setJobRequests(prev => prev.filter(j => j.id !== bookingId))
-      alert('Booking accepted!')
+      setBookings((prev) => prev.map((booking) => (
+        booking.id === bookingId ? { ...booking, status: 'accepted' } : booking
+      )))
     } catch (err) {
       console.error('Accept booking error', err)
       alert('Failed to accept booking')
@@ -76,8 +99,9 @@ export default function WorkerDashboard() {
     setProcessingId(bookingId)
     try {
       await api.updateBookingStatus(bookingId, 'declined')
-      setJobRequests(prev => prev.filter(j => j.id !== bookingId))
-      alert('Booking declined')
+      setBookings((prev) => prev.map((booking) => (
+        booking.id === bookingId ? { ...booking, status: 'declined' } : booking
+      )))
     } catch (err) {
       console.error('Decline booking error', err)
       alert('Failed to decline booking')
@@ -85,27 +109,6 @@ export default function WorkerDashboard() {
       setProcessingId(null)
     }
   }
-
-  const activeJobs = [
-    {
-      id: 1,
-      service: 'Cleaning Service',
-      homeowner: 'John D.',
-      date: 'Today',
-      time: '4:00 PM',
-      status: 'In Progress',
-      image: '👨‍💼'
-    },
-    {
-      id: 2,
-      service: 'Laundry & Ironing',
-      homeowner: 'Emma W.',
-      date: 'March 5',
-      time: '10:00 AM',
-      status: 'Scheduled',
-      image: '👩‍💼'
-    }
-  ]
 
   return (
     <div className="worker-dashboard-container">
@@ -172,8 +175,8 @@ export default function WorkerDashboard() {
                         <p className="job-datetime">{job.date}</p>
                         {job.notes && <p className="job-notes">{job.notes}</p>}
                         {job.homeownerPhone && <p className="job-phone">{job.homeownerPhone}</p>}
-                        <p className={`job-status status-${job.status.toLowerCase().replace(' ', '-')}`}>
-                          Status: {job.status}
+                        <p className={`job-status status-${job.status}`}>
+                          Status: {formatStatusLabel(job.status)}
                         </p>
                       </div>
                       <div className="job-actions">
@@ -205,30 +208,34 @@ export default function WorkerDashboard() {
             {/* Your Jobs tab */}
             <div className="welcome-section">
               <h1 className="welcome-title">Your Jobs</h1>
-              <p className="welcome-subtitle">Track all your active jobs</p>
+              <p className="welcome-subtitle">Track accepted and declined bookings</p>
             </div>
 
             <section className="active-jobs-section">
-              <div className="jobs-list">
-                {activeJobs.map((job) => (
-                  <div key={job.id} className="job-card">
-                    <div className="job-image">{job.image}</div>
-                    <div className="job-info">
-                      <h3 className="job-service">
-                        {job.service} <span className="job-homeowner">for {job.homeowner}</span>
-                      </h3>
-                      <p className="job-datetime">{job.date}, {job.time}</p>
-                      <p className={`job-status status-${job.status.toLowerCase().replace(' ', '-')}`}>
-                        Status: {job.status}
-                      </p>
+              {loading ? (
+                <div className="loading-message">Loading bookings...</div>
+              ) : processedBookings.length > 0 ? (
+                <div className="jobs-list">
+                  {processedBookings.map((job) => (
+                    <div key={job.id} className="job-card">
+                      <div className="job-image">👤</div>
+                      <div className="job-info">
+                        <h3 className="job-service">
+                          {job.service} <span className="job-homeowner">from {job.homeowner}</span>
+                        </h3>
+                        <p className="job-datetime">{job.date}</p>
+                        {job.notes && <p className="job-notes">{job.notes}</p>}
+                        {job.homeownerPhone && <p className="job-phone">{job.homeownerPhone}</p>}
+                        <p className={`job-status status-${job.status}`}>
+                          Status: {formatStatusLabel(job.status)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="job-actions">
-                      <button className="btn-complete">Complete</button>
-                      <button className="btn-reschedule">Reschedule</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state">No accepted or declined bookings yet.</div>
+              )}
             </section>
           </>
         )}

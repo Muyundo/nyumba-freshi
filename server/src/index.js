@@ -255,6 +255,54 @@ app.post('/api/bookings', verifyTokenMiddleware, (req, res) => {
   }
 })
 
+// Get bookings for a homeowner
+app.get('/api/homeowners/:homeownerId/bookings', verifyTokenMiddleware, (req, res) => {
+  const { homeownerId } = req.params
+  const requesterId = String(req.user.userId)
+
+  if (requesterId !== String(homeownerId)) {
+    return res.status(403).json({ error: 'Not authorized to view these bookings' })
+  }
+
+  try {
+    const query = db.prepare(`
+      SELECT
+        b.id,
+        b.homeowner_id,
+        b.worker_id,
+        b.service,
+        b.booking_date,
+        b.notes,
+        b.status,
+        b.created_at,
+        u.full_name as worker_name,
+        u.phone as worker_phone
+      FROM bookings b
+      LEFT JOIN users u ON b.worker_id = u.id
+      WHERE b.homeowner_id = ?
+      ORDER BY b.created_at DESC
+    `)
+
+    const bookings = query.all(homeownerId)
+
+    return res.json(bookings.map((b) => ({
+      id: b.id,
+      homeownerId: b.homeowner_id,
+      workerId: b.worker_id,
+      service: b.service,
+      bookingDate: b.booking_date,
+      notes: b.notes,
+      status: b.status,
+      createdAt: b.created_at,
+      workerName: b.worker_name,
+      workerPhone: b.worker_phone,
+    })))
+  } catch (err) {
+    console.error('Get homeowner bookings error', err)
+    return res.status(500).json({ error: 'Failed to fetch homeowner bookings' })
+  }
+})
+
 // Get bookings for a worker
 app.get('/api/workers/:workerId/bookings', (req, res) => {
   const { workerId } = req.params

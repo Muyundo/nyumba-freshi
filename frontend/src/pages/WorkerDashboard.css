@@ -243,6 +243,14 @@
   color: #ca8a04;
 }
 
+.status-accepted {
+  color: #16a34a;
+}
+
+.status-declined {
+  color: #dc2626;
+}
+
 .status-in-progress {
   color: #0891b2;
 }

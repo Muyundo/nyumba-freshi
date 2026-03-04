@@ -167,12 +167,31 @@
   margin: 0;
 }
 
+.dashboard-message {
+  background-color: #f3f4f6;
+  color: #374151;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.dashboard-message.error {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
 .status-accepted {
   color: #16a34a;
 }
 
 .status-pending {
   color: #ca8a04;
+}
+
+.status-declined {
+  color: #dc2626;
 }
 
 .status-completed {
