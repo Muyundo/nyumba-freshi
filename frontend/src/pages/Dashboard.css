@@ -203,9 +203,9 @@
 
 .btn-secondary {
   flex: 1;
-  background-color: white;
-  color: #1e293b;
-  border: 1px solid #e2e8f0;
+  background-color: #2563eb;
+  color: white;
+  border: none;
   padding: 0.875rem 2rem;
   border-radius: 0.5rem;
   font-size: 1rem;
@@ -216,13 +216,13 @@
   justify-content: center;
   gap: 0.5rem;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
 }
 
 .btn-secondary:hover {
-  border-color: #cbd5e1;
-  background-color: #f8fafc;
+  background-color: #1d4ed8;
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
 }
 
 .btn-icon {
