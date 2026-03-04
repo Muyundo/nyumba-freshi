@@ -82,6 +82,7 @@ export default function WorkerDashboard() {
 
   const jobRequests = bookings.filter((booking) => booking.status === 'pending')
   const acceptedJobs = bookings.filter((booking) => booking.status === 'accepted')
+  const completedJobs = bookings.filter((booking) => booking.status === 'declined' || booking.status === 'cancelled')
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -137,141 +138,188 @@ export default function WorkerDashboard() {
 
   return (
     <div className="worker-dashboard-container">
-      {/* Header with navigation */}
+      {/* Header */}
       <header className="worker-dashboard-header">
-        <div className="nav-tabs">
-          <button 
-            className={`nav-tab ${activeTab === 'requests' ? 'active' : ''}`}
-            onClick={() => setActiveTab('requests')}
-          >
-            Job Requests
-          </button>
-          <button 
-            className={`nav-tab ${activeTab === 'jobs' ? 'active' : ''}`}
-            onClick={() => setActiveTab('jobs')}
-          >
-            Your Jobs
+        <div className="header-left">
+          <div className="logo">🏠 WorkerHub</div>
+          <nav className="nav-tabs">
+            <button 
+              className={`nav-tab ${activeTab === 'requests' ? 'active' : ''}`}
+              onClick={() => setActiveTab('requests')}
+            >
+              Job Requests
+            </button>
+            <button 
+              className={`nav-tab ${activeTab === 'jobs' ? 'active' : ''}`}
+              onClick={() => setActiveTab('jobs')}
+            >
+              Your Jobs
+            </button>
+          </nav>
+        </div>
+        <div className="header-right">
+          <div className="user-profile">
+            <span className="avatar">👤</span>
+            <span className="user-name">{displayName}</span>
+          </div>
+          <button className="btn-logout" onClick={handleLogout}>
+            Logout
           </button>
         </div>
-        <button className="btn-logout" onClick={handleLogout}>
-          Logout
-        </button>
       </header>
 
-      {/* Main content */}
+      {/* Main Content */}
       <main className="worker-dashboard-main">
+        {/* Welcome Section */}
+        <div className="welcome-section">
+          <h1 className="welcome-title">Welcome back, {displayName}!</h1>
+          <p className="welcome-subtitle">What is on your agenda today?</p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="stats-section">
+          <div className="stat-card">
+            <div className="stat-icon">📋</div>
+            <div className="stat-content">
+              <span className="stat-value">{jobRequests.length}</span>
+              <span className="stat-label">Pending Requests</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon">💼</div>
+            <div className="stat-content">
+              <span className="stat-value">{acceptedJobs.length}</span>
+              <span className="stat-label">Active Jobs</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon">✅</div>
+            <div className="stat-content">
+              <span className="stat-value">{completedJobs.length}</span>
+              <span className="stat-label">Completed</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Cards */}
+        <div className="action-cards-section">
+          <div className="action-card" onClick={() => setActiveTab('requests')}>
+            <div className="action-card-header">
+              <div className="action-icon">📅</div>
+              <h3>New Job Requests</h3>
+            </div>
+            <p className="action-description">View & accept appointments</p>
+            <div className="action-card-footer">
+              <span className="pending-count">{jobRequests.length} pending</span>
+              <button className="btn-primary">View Requests</button>
+            </div>
+          </div>
+
+          <div className="action-card" onClick={() => setActiveTab('jobs')}>
+            <div className="action-card-header">
+              <div className="action-icon">💼</div>
+              <h3>Your Jobs</h3>
+            </div>
+            <p className="action-description">Manage your active jobs</p>
+            <div className="action-card-footer">
+              <span className="active-count">{acceptedJobs.length} active</span>
+              <button className="btn-primary">View Jobs</button>
+            </div>
+          </div>
+        </div>
+
+        {/* Content Area */}
         {activeTab === 'requests' ? (
-          <>
-            {/* Welcome section */}
-            <div className="welcome-section">
-              <h1 className="welcome-title">Welcome back, {displayName}!</h1>
-              <p className="welcome-subtitle">What is on your agenda today?</p>
-            </div>
-
-            {/* Action cards */}
-            <section className="actions-section">
-              <div className="action-card new-requests">
-                <div className="action-icon">📅</div>
-                <h3>New Job Requests</h3>
-                <p>View & accept appointments</p>
-              </div>
-              <div className="action-card active-jobs" onClick={() => setActiveTab('jobs')}>
-                <div className="action-icon">✅</div>
-                <h3>Your Jobs</h3>
-                <p>Manage your active jobs</p>
-              </div>
-            </section>
-
-            {/* Job Requests */}
-            <section className="job-requests-section">
-              <h2 className="section-title">📋 New Job Request{jobRequests.length !== 1 ? 's' : ''}</h2>
-              {error && <div className="error-message">{error}</div>}
-              {loading ? (
-                <div className="loading-message">Loading job requests...</div>
-              ) : jobRequests.length > 0 ? (
-                <div className="jobs-list">
-                  {jobRequests.map((job) => (
-                    <div key={job.id} className="job-card">
-                      <div className="job-image">👤</div>
-                      <div className="job-info">
-                        <h3 className="job-service">
-                          {job.service} <span className="job-homeowner">from {job.homeowner}</span>
-                        </h3>
-                        <p className="job-datetime">{job.date}</p>
-                        {job.notes && <p className="job-notes">{job.notes}</p>}
-                        {job.homeownerPhone && <p className="job-phone">{job.homeownerPhone}</p>}
-                        <p className={`job-status status-${job.status}`}>
-                          Status: {formatStatusLabel(job.status)}
-                        </p>
-                      </div>
-                      <div className="job-actions">
-                        <button 
-                          className="btn-accept" 
-                          onClick={() => handleAcceptJob(job.id)}
-                          disabled={processingId === job.id}
-                        >
-                          {processingId === job.id ? '...' : 'Accept'}
-                        </button>
-                        <button 
-                          className="btn-decline" 
-                          onClick={() => handleDeclineJob(job.id)}
-                          disabled={processingId === job.id}
-                        >
-                          {processingId === job.id ? '...' : 'Decline'}
-                        </button>
+          <section className="jobs-section">
+            <h2 className="section-title">Job Requests</h2>
+            {error && <div className="error-message">{error}</div>}
+            {loading ? (
+              <div className="loading-message">Loading job requests...</div>
+            ) : jobRequests.length > 0 ? (
+              <div className="jobs-list">
+                {jobRequests.map((job) => (
+                  <div key={job.id} className="job-card">
+                    <div className="job-header">
+                      <div className="job-avatar">👤</div>
+                      <div className="job-title-info">
+                        <h3 className="job-service">{job.service}</h3>
+                        <p className="job-homeowner">{job.homeowner}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-state">No pending job requests at the moment.</div>
-              )}
-            </section>
-          </>
+                    <div className="job-details">
+                      <p><strong>📅 Date:</strong> {job.date}</p>
+                      {job.homeownerPhone && <p><strong>📞 Phone:</strong> {job.homeownerPhone}</p>}
+                      {job.notes && <p><strong>📝 Notes:</strong> {job.notes}</p>}
+                    </div>
+                    <div className="job-actions">
+                      <button 
+                        className="btn-accept" 
+                        onClick={() => handleAcceptJob(job.id)}
+                        disabled={processingId === job.id}
+                      >
+                        {processingId === job.id ? '...' : '✓ Accept'}
+                      </button>
+                      <button 
+                        className="btn-decline" 
+                        onClick={() => handleDeclineJob(job.id)}
+                        disabled={processingId === job.id}
+                      >
+                        {processingId === job.id ? '...' : '✕ Decline'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <div className="empty-icon">✓</div>
+                <h3>No pending requests</h3>
+                <p>You're all caught up. New requests will appear here.</p>
+              </div>
+            )}
+          </section>
         ) : (
-          <>
-            {/* Your Jobs tab */}
-            <div className="welcome-section">
-              <h1 className="welcome-title">Your Jobs</h1>
-              <p className="welcome-subtitle">Track and manage your accepted bookings</p>
-            </div>
-
-            <section className="active-jobs-section">
-              {loading ? (
-                <div className="loading-message">Loading bookings...</div>
-              ) : acceptedJobs.length > 0 ? (
-                <div className="jobs-list">
-                  {acceptedJobs.map((job) => (
-                    <div key={job.id} className="job-card">
-                      <div className="job-image">👤</div>
-                      <div className="job-info">
-                        <h3 className="job-service">
-                          {job.service} <span className="job-homeowner">from {job.homeowner}</span>
-                        </h3>
-                        <p className="job-datetime">{job.date}</p>
-                        {job.notes && <p className="job-notes">{job.notes}</p>}
-                        {job.homeownerPhone && <p className="job-phone">{job.homeownerPhone}</p>}
-                        <p className={`job-status status-${job.status}`}>
-                          Status: {formatStatusLabel(job.status)}
-                        </p>
+          <section className="jobs-section">
+            <h2 className="section-title">Your Jobs</h2>
+            {loading ? (
+              <div className="loading-message">Loading bookings...</div>
+            ) : acceptedJobs.length > 0 ? (
+              <div className="jobs-list">
+                {acceptedJobs.map((job) => (
+                  <div key={job.id} className="job-card">
+                    <div className="job-header">
+                      <div className="job-avatar">👤</div>
+                      <div className="job-title-info">
+                        <h3 className="job-service">{job.service}</h3>
+                        <p className="job-homeowner">{job.homeowner}</p>
                       </div>
-                      <div className="job-actions">
-                        <button
-                          className="btn-cancel"
-                          onClick={() => handleCancelJob(job.id)}
-                          disabled={processingId === job.id}
-                        >
-                          {processingId === job.id ? '...' : 'Cancel'}
-                        </button>
-                      </div>
+                      <span className="status-badge">Accepted</span>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-state">No accepted bookings yet.</div>
-              )}
-            </section>
-          </>
+                    <div className="job-details">
+                      <p><strong>📅 Date:</strong> {job.date}</p>
+                      {job.homeownerPhone && <p><strong>📞 Phone:</strong> {job.homeownerPhone}</p>}
+                      {job.notes && <p><strong>📝 Notes:</strong> {job.notes}</p>}
+                    </div>
+                    <div className="job-actions">
+                      <button
+                        className="btn-cancel"
+                        onClick={() => handleCancelJob(job.id)}
+                        disabled={processingId === job.id}
+                      >
+                        {processingId === job.id ? '...' : '✕ Cancel'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <div className="empty-icon">💼</div>
+                <h3>No active jobs</h3>
+                <p>Start by accepting job requests to see them here.</p>
+              </div>
+            )}
+          </section>
         )}
       </main>
     </div>

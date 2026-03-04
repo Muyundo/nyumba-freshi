@@ -1,5 +1,6 @@
-import React from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import React, { useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { setTokenExpiredCallback } from './api'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Workers from './pages/Workers'
@@ -30,49 +31,63 @@ function DashboardRouter() {
   return <Dashboard />
 }
 
+function AppRoutes() {
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    // Set up token expiration callback
+    setTokenExpiredCallback(() => {
+      navigate('/login', { replace: true })
+    })
+  }, [navigate])
+
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route
+        path="/workers"
+        element={
+          <ProtectedRoute>
+            <Workers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/workers/:id"
+        element={
+          <ProtectedRoute>
+            <WorkerProfile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/booking/:workerId"
+        element={
+          <ProtectedRoute>
+            <Booking />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardRouter />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
+  )
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <div className="app">
-
         <main style={{ padding: 12 }}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route
-              path="/workers"
-              element={
-                <ProtectedRoute>
-                  <Workers />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/workers/:id"
-              element={
-                <ProtectedRoute>
-                  <WorkerProfile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/booking/:workerId"
-              element={
-                <ProtectedRoute>
-                  <Booking />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <DashboardRouter />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
+          <AppRoutes />
         </main>
       </div>
     </BrowserRouter>

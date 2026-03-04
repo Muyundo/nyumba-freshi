@@ -1,5 +1,20 @@
 const BASE = import.meta.env.VITE_API_BASE || ''
 
+let onTokenExpired = null
+
+export function setTokenExpiredCallback(callback) {
+  onTokenExpired = callback
+}
+
+function handleTokenExpired() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('currentUser')
+  localStorage.removeItem('userRole')
+  if (onTokenExpired) {
+    onTokenExpired()
+  }
+}
+
 function getAuthHeaders() {
   const token = localStorage.getItem('token')
   return token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' }
@@ -8,6 +23,13 @@ function getAuthHeaders() {
 async function request(path, opts = {}) {
   const url = path.startsWith('http') ? path : `${BASE}${path}`
   const res = await fetch(url, opts)
+  
+  // Handle token expiration (401 Unauthorized)
+  if (res.status === 401) {
+    handleTokenExpired()
+    throw new Error('Session expired. Please log in again.')
+  }
+  
   if (!res.ok) {
     const text = await res.text()
     throw new Error(`${res.status} ${res.statusText}: ${text}`)
