@@ -40,9 +40,30 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/workers" element={<Workers />} />
-            <Route path="/workers/:id" element={<WorkerProfile />} />
-            <Route path="/booking/:workerId" element={<Booking />} />
+            <Route
+              path="/workers"
+              element={
+                <ProtectedRoute>
+                  <Workers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/workers/:id"
+              element={
+                <ProtectedRoute>
+                  <WorkerProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/booking/:workerId"
+              element={
+                <ProtectedRoute>
+                  <Booking />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/dashboard"
               element={
