@@ -52,6 +52,25 @@
   font-size: 0.9rem;
 }
 
+.booking-message {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+.booking-message.error {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.booking-message.success {
+  background-color: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
 .booking-form-group label {
   font-size: 0.95rem;
   font-weight: 600;

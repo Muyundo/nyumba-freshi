@@ -1,5 +1,10 @@
 const BASE = import.meta.env.VITE_API_BASE || ''
 
+function getAuthHeaders() {
+  const token = localStorage.getItem('token')
+  return token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' }
+}
+
 async function request(path, opts = {}) {
   const url = path.startsWith('http') ? path : `${BASE}${path}`
   const res = await fetch(url, opts)
@@ -38,4 +43,24 @@ export function getWorker(id) {
   return request(`/api/workers/${id}`)
 }
 
-export default { getHello, login, register, getWorkers, getWorker }
+export function createBooking(payload) {
+  return request('/api/bookings', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  })
+}
+
+export function getWorkerBookings(workerId) {
+  return request(`/api/workers/${workerId}/bookings`)
+}
+
+export function updateBookingStatus(bookingId, status) {
+  return request(`/api/bookings/${bookingId}`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ status }),
+  })
+}
+
+export default { getHello, login, register, getWorkers, getWorker, createBooking, getWorkerBookings, updateBookingStatus }

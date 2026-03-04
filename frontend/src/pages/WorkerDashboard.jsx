@@ -1,10 +1,16 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import api from '../api'
 import './WorkerDashboard.css'
 
 export default function WorkerDashboard() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('requests')
+  const [jobRequests, setJobRequests] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [processingId, setProcessingId] = useState(null)
+
   const userData = localStorage.getItem('currentUser')
   let currentUser = null
   try {
@@ -13,6 +19,37 @@ export default function WorkerDashboard() {
     currentUser = null
   }
   const displayName = currentUser?.fullName || 'Worker'
+  const workerId = currentUser?.id
+
+  useEffect(() => {
+    const loadBookings = async () => {
+      if (!workerId) return
+      setLoading(true)
+      setError('')
+      try {
+        const bookings = await api.getWorkerBookings(workerId)
+        const pendingBookings = bookings.filter(b => b.status === 'pending') || []
+        setJobRequests(
+          pendingBookings.map(b => ({
+            id: b.id,
+            service: b.service,
+            homeowner: b.homeownerName || 'Unknown Homeowner',
+            homeownerPhone: b.homeownerPhone || '',
+            date: new Date(b.bookingDate).toLocaleDateString(),
+            notes: b.notes,
+            status: 'Pending'
+          }))
+        )
+      } catch (err) {
+        console.error('Load bookings error', err)
+        setError('Failed to load job requests')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadBookings()
+  }, [workerId])
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -21,27 +58,33 @@ export default function WorkerDashboard() {
     navigate('/login')
   }
 
-  // Demo data for new job requests
-  const jobRequests = [
-    {
-      id: 1,
-      service: 'Laundry Service',
-      homeowner: 'Brian M.',
-      date: 'Tomorrow',
-      time: '2:00 PM',
-      status: 'Pending',
-      image: '👨‍💼'
-    },
-    {
-      id: 2,
-      service: 'House Cleaning',
-      homeowner: 'Sarah K.',
-      date: 'March 6',
-      time: '9:00 AM',
-      status: 'Pending',
-      image: '👩‍💼'
+  const handleAcceptJob = async (bookingId) => {
+    setProcessingId(bookingId)
+    try {
+      await api.updateBookingStatus(bookingId, 'accepted')
+      setJobRequests(prev => prev.filter(j => j.id !== bookingId))
+      alert('Booking accepted!')
+    } catch (err) {
+      console.error('Accept booking error', err)
+      alert('Failed to accept booking')
+    } finally {
+      setProcessingId(null)
     }
-  ]
+  }
+
+  const handleDeclineJob = async (bookingId) => {
+    setProcessingId(bookingId)
+    try {
+      await api.updateBookingStatus(bookingId, 'declined')
+      setJobRequests(prev => prev.filter(j => j.id !== bookingId))
+      alert('Booking declined')
+    } catch (err) {
+      console.error('Decline booking error', err)
+      alert('Failed to decline booking')
+    } finally {
+      setProcessingId(null)
+    }
+  }
 
   const activeJobs = [
     {
@@ -63,10 +106,6 @@ export default function WorkerDashboard() {
       image: '👩‍💼'
     }
   ]
-
-  const handleAcceptJob = (jobId) => {
-    alert(`Job ${jobId} accepted!`)
-  }
 
   return (
     <div className="worker-dashboard-container">
@@ -116,30 +155,50 @@ export default function WorkerDashboard() {
             </section>
 
             {/* Job Requests */}
-            {jobRequests.length > 0 && (
-              <section className="job-requests-section">
-                <h2 className="section-title">📋 New Job Request</h2>
+            <section className="job-requests-section">
+              <h2 className="section-title">📋 New Job Request{jobRequests.length !== 1 ? 's' : ''}</h2>
+              {error && <div className="error-message">{error}</div>}
+              {loading ? (
+                <div className="loading-message">Loading job requests...</div>
+              ) : jobRequests.length > 0 ? (
                 <div className="jobs-list">
                   {jobRequests.map((job) => (
                     <div key={job.id} className="job-card">
-                      <div className="job-image">{job.image}</div>
+                      <div className="job-image">👤</div>
                       <div className="job-info">
                         <h3 className="job-service">
-                          {job.service} <span className="job-homeowner">for {job.homeowner}</span>
+                          {job.service} <span className="job-homeowner">from {job.homeowner}</span>
                         </h3>
-                        <p className="job-datetime">{job.date}, {job.time}</p>
+                        <p className="job-datetime">{job.date}</p>
+                        {job.notes && <p className="job-notes">{job.notes}</p>}
+                        {job.homeownerPhone && <p className="job-phone">{job.homeownerPhone}</p>}
                         <p className={`job-status status-${job.status.toLowerCase().replace(' ', '-')}`}>
                           Status: {job.status}
                         </p>
                       </div>
-                      <button className="btn-accept" onClick={() => handleAcceptJob(job.id)}>
-                        Accept
-                      </button>
+                      <div className="job-actions">
+                        <button 
+                          className="btn-accept" 
+                          onClick={() => handleAcceptJob(job.id)}
+                          disabled={processingId === job.id}
+                        >
+                          {processingId === job.id ? '...' : 'Accept'}
+                        </button>
+                        <button 
+                          className="btn-decline" 
+                          onClick={() => handleDeclineJob(job.id)}
+                          disabled={processingId === job.id}
+                        >
+                          {processingId === job.id ? '...' : 'Decline'}
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
-              </section>
-            )}
+              ) : (
+                <div className="empty-state">No pending job requests at the moment.</div>
+              )}
+            </section>
           </>
         ) : (
           <>

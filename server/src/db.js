@@ -41,4 +41,20 @@ db.exec(`
   )
 `)
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS bookings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    homeowner_id INTEGER,
+    worker_id INTEGER,
+    service TEXT,
+    booking_date TEXT,
+    notes TEXT,
+    status TEXT DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (homeowner_id) REFERENCES users(id),
+    FOREIGN KEY (worker_id) REFERENCES users(id)
+  )
+`)
+
 module.exports = db

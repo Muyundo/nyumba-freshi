@@ -65,7 +65,7 @@ export default function Booking() {
     setSelectedServices({ cleaning: checked, laundry: checked })
   }
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
     setMessage('')
 
@@ -75,16 +75,33 @@ export default function Booking() {
       return
     }
 
-    const selectedServiceNames = chosenServices.map((key) => SERVICE_KEYS[key] || key)
-    // In MVP we would POST to /api/bookings — here we just simulate
-    const targetName = workerName || `Worker ${workerId}`
-    alert(`Booking requested for ${targetName} on ${date} for ${selectedServiceNames.join(' + ')}`)
-    navigate('/dashboard')
+    if (!date) {
+      setMessage('Please select a date')
+      return
+    }
+
+    try {
+      const serviceString = chosenServices.map((key) => SERVICE_KEYS[key] || key).join(' + ')
+      const payload = {
+        workerId: parseInt(workerId, 10),
+        service: serviceString,
+        bookingDate: date,
+        notes: notes || '',
+      }
+
+      await api.createBooking(payload)
+      setMessage('Booking requested successfully! Waiting for worker to respond.')
+      setTimeout(() => navigate('/dashboard'), 2000)
+    } catch (error) {
+      console.error('Booking error', error)
+      setMessage('Failed to create booking: ' + (error?.message || 'Unknown error'))
+    }
   }
 
   return (
     <div className="booking-container">
       <h2>Book {workerName || `Worker ${workerId}`}</h2>
+      {message && <div className={`booking-message ${message.includes('successfully') ? 'success' : 'error'}`}>{message}</div>}
       <form className="booking-form" onSubmit={submit}>
         <div className="booking-form-group">
           <label>Service Type</label>
@@ -120,7 +137,6 @@ export default function Booking() {
               </label>
             )}
           </div>
-          {message && <div className="booking-error">{message}</div>}
         </div>
         <div className="booking-form-group">
           <label htmlFor="date">Date</label>

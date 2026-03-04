@@ -224,6 +224,112 @@ app.get('/api/workers/:id', (req, res) => {
   }
 })
 
+// Create a booking
+app.post('/api/bookings', verifyTokenMiddleware, (req, res) => {
+  const { workerId, service, bookingDate, notes } = req.body || {}
+  const homeownerId = req.user.userId
+
+  if (!workerId || !service || !bookingDate) {
+    return res.status(400).json({ error: 'workerId, service, and bookingDate are required' })
+  }
+
+  try {
+    const insertBooking = db.prepare(
+      'INSERT INTO bookings (homeowner_id, worker_id, service, booking_date, notes, status) VALUES (?, ?, ?, ?, ?, ?)'
+    )
+    const result = insertBooking.run(homeownerId, workerId, service, bookingDate, notes || '', 'pending')
+    
+    res.status(201).json({
+      id: result.lastInsertRowid,
+      homeownerId,
+      workerId,
+      service,
+      bookingDate,
+      notes: notes || '',
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    })
+  } catch (err) {
+    console.error('Create booking error', err)
+    res.status(500).json({ error: 'Failed to create booking' })
+  }
+})
+
+// Get bookings for a worker
+app.get('/api/workers/:workerId/bookings', (req, res) => {
+  const { workerId } = req.params
+
+  try {
+    const query = db.prepare(`
+      SELECT 
+        b.id,
+        b.homeowner_id,
+        b.worker_id,
+        b.service,
+        b.booking_date,
+        b.notes,
+        b.status,
+        b.created_at,
+        u.full_name as homeowner_name,
+        u.phone as homeowner_phone
+      FROM bookings b
+      LEFT JOIN users u ON b.homeowner_id = u.id
+      WHERE b.worker_id = ?
+      ORDER BY b.created_at DESC
+    `)
+    const bookings = query.all(workerId)
+    
+    res.json(bookings.map(b => ({
+      id: b.id,
+      homeownerId: b.homeowner_id,
+      workerId: b.worker_id,
+      service: b.service,
+      bookingDate: b.booking_date,
+      notes: b.notes,
+      status: b.status,
+      createdAt: b.created_at,
+      homeownerName: b.homeowner_name,
+      homeownerPhone: b.homeowner_phone
+    })))
+  } catch (err) {
+    console.error('Get worker bookings error', err)
+    res.status(500).json({ error: 'Failed to fetch bookings' })
+  }
+})
+
+// Accept or decline a booking
+app.patch('/api/bookings/:bookingId', verifyTokenMiddleware, (req, res) => {
+  const { bookingId } = req.params
+  const { status } = req.body || {}
+  const workerId = req.user.userId
+
+  if (!status || !['accepted', 'declined'].includes(status)) {
+    return res.status(400).json({ error: 'status must be accepted or declined' })
+  }
+
+  try {
+    const booking = db.prepare('SELECT * FROM bookings WHERE id = ? AND worker_id = ?').get(bookingId, workerId)
+    
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found or not authorized' })
+    }
+
+    const updateBooking = db.prepare(
+      'UPDATE bookings SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+    )
+    updateBooking.run(status, bookingId)
+    
+    res.json({
+      id: bookingId,
+      status,
+      message: `Booking ${status} successfully`
+    })
+  } catch (err) {
+    console.error('Update booking error', err)
+    res.status(500).json({ error: 'Failed to update booking' })
+  }
+})
+
 app.listen(port, () => {
   console.log(`Nyumba Freshi backend running on http://localhost:${port}`)
 })

@@ -268,9 +268,36 @@
   flex-shrink: 0;
 }
 
-.btn-accept:hover {
+.btn-accept:hover:not(:disabled) {
   background-color: #059669;
   transform: translateY(-2px);
+}
+
+.btn-accept:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-decline {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.btn-decline:hover:not(:disabled) {
+  background-color: #dc2626;
+  transform: translateY(-2px);
+}
+
+.btn-decline:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .job-actions {
@@ -311,6 +338,44 @@
 .btn-reschedule:hover {
   background-color: #475569;
   transform: translateY(-2px);
+}
+
+/* Status Messages */
+.error-message {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #fecaca;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+}
+
+.loading-message {
+  text-align: center;
+  color: #6b7280;
+  padding: 2rem;
+  font-size: 1rem;
+}
+
+.empty-state {
+  text-align: center;
+  color: #6b7280;
+  padding: 2rem;
+  font-size: 1rem;
+}
+
+.job-notes {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-style: italic;
+  margin: 0.25rem 0;
+}
+
+.job-phone {
+  font-size: 0.85rem;
+  color: #2563eb;
+  margin: 0.25rem 0;
 }
 
 /* Responsive */
@@ -354,6 +419,7 @@
   }
 
   .btn-accept,
+  .btn-decline,
   .btn-complete,
   .btn-reschedule {
     width: 100%;
