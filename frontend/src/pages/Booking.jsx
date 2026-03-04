@@ -1,23 +1,41 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import api from '../api'
 import './Booking.css'
 
 export default function Booking() {
   const { workerId } = useParams()
   const [date, setDate] = useState('')
   const [notes, setNotes] = useState('')
+  const [workerName, setWorkerName] = useState('')
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const loadWorker = async () => {
+      try {
+        const worker = await api.getWorker(workerId)
+        setWorkerName(worker?.fullName || '')
+      } catch (error) {
+        setWorkerName('')
+      }
+    }
+
+    if (workerId) {
+      loadWorker()
+    }
+  }, [workerId])
 
   const submit = (e) => {
     e.preventDefault()
     // In MVP we would POST to /api/bookings — here we just simulate
-    alert(`Booking requested for worker ${workerId} on ${date}`)
+    const targetName = workerName || `Worker ${workerId}`
+    alert(`Booking requested for ${targetName} on ${date}`)
     navigate('/dashboard')
   }
 
   return (
     <div className="booking-container">
-      <h2>Book Worker {workerId}</h2>
+      <h2>Book {workerName || `Worker ${workerId}`}</h2>
       <form className="booking-form" onSubmit={submit}>
         <div className="booking-form-group">
           <label htmlFor="date">Date</label>
