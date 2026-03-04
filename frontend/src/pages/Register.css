@@ -2,6 +2,7 @@
   max-width:420px;
   margin:32px auto;
   font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  padding: 0 1rem;
 }
 .register-card{
   background: #ffffff;
@@ -17,12 +18,40 @@
 .register-form{ display:flex; flex-direction:column; gap:10px }
 .form-group{ display:flex; flex-direction:column; gap:6px }
 .form-group label{ font-size:13px; color:#111827 }
-.form-control{ padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px }
-.two-col{ display:flex; gap:8px }
+.form-control{ padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; width:100%; box-sizing:border-box; }
+select.form-control{ cursor:pointer; appearance:none; }
+.two-col{ display:flex; gap:8px; flex-direction:row; }
 .two-col .form-control{ flex:1 }
-.btn-primary{ background:#2563eb; color:#fff; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; font-weight:600 }
+.btn-primary{ background:#2563eb; color:#fff; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; font-weight:600; width:100%; }
 .help-text{ font-size:13px; color:#6b7280 }
 .message{ margin-top:8px; font-size:13px }
 .message.error{ color:#b91c1c }
 .footer-note{ text-align:center; margin-top:12px; font-size:14px }
 .footer-note a{ color:#2563eb }
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+  .register-container{
+    margin: 16px auto;
+  }
+  .register-card{
+    padding: 16px;
+    border-radius: 8px;
+  }
+  .register-header h2{
+    font-size: 18px;
+  }
+  .register-header img{
+    height: 40px;
+  }
+  .two-col{
+    flex-direction: column;
+  }
+  .form-control{
+    font-size: 16px;
+  }
+  .btn-primary{
+    padding: 12px 10px;
+    font-size: 14px;
+  }
+}

@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import './Home.css'
 
 export default function Home() {
   const services = [
@@ -9,7 +10,7 @@ export default function Home() {
   ]
 
   return (
-    <div>
+    <div className="home-container">
       <h2>Find a Domestic Worker</h2>
       <p>Choose a service to see available workers in Nairobi.</p>
       <ul>

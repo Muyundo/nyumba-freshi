@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import './Workers.css'
 
 // Dummy data for MVP — in real app this would come from API
 const DUMMY_WORKERS = [
@@ -24,16 +25,19 @@ export default function Workers() {
   }, [service])
 
   return (
-    <div>
+    <div className="workers-container">
       <h2>Workers</h2>
       {service && <p>Filtering by service: {service}</p>}
       <ul>
         {list.map((w) => (
           <li key={w.id}>
-            <Link to={`/workers/${w.id}`}>{w.name}</Link> — {w.services.join(', ')}{' '}
-            <Link to={`/booking/${w.id}`} style={{ marginLeft: 8 }}>
-              Book
-            </Link>
+            <div>
+              <Link to={`/workers/${w.id}`}>{w.name}</Link>
+              <div className="worker-services">{w.services.join(', ')}</div>
+            </div>
+            <div className="worker-actions">
+              <Link to={`/booking/${w.id}`}>Book Now</Link>
+            </div>
           </li>
         ))}
       </ul>

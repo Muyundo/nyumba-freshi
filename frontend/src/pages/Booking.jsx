@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import './Booking.css'
 
 export default function Booking() {
   const { workerId } = useParams()
@@ -15,22 +16,29 @@ export default function Booking() {
   }
 
   return (
-    <div>
+    <div className="booking-container">
       <h2>Book Worker {workerId}</h2>
-      <form onSubmit={submit}>
-        <div>
-          <label>
-            Date:
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
-          </label>
+      <form className="booking-form" onSubmit={submit}>
+        <div className="booking-form-group">
+          <label htmlFor="date">Date</label>
+          <input 
+            id="date"
+            type="date" 
+            value={date} 
+            onChange={(e) => setDate(e.target.value)} 
+            required 
+          />
         </div>
-        <div>
-          <label>
-            Notes:
-            <input value={notes} onChange={(e) => setNotes(e.target.value)} />
-          </label>
+        <div className="booking-form-group">
+          <label htmlFor="notes">Notes</label>
+          <textarea 
+            id="notes"
+            value={notes} 
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Any special instructions or details for the worker..."
+          />
         </div>
-        <button type="submit">Request Booking</button>
+        <button className="booking-submit" type="submit">Request Booking</button>
       </form>
     </div>
   )
