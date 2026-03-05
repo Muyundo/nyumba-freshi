@@ -3,6 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import api from '../api'
 import './WorkerDashboard.css'
 
+function formatTime24to12(time24) {
+  if (!time24) return ''
+  const [hours, minutes] = time24.split(':')
+  const hour = parseInt(hours, 10)
+  const ampm = hour >= 12 ? 'PM' : 'AM'
+  const hour12 = hour % 12 || 12
+  return `${hour12}:${minutes} ${ampm}`
+}
+
 export default function WorkerDashboard() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('requests')
@@ -34,6 +43,7 @@ export default function WorkerDashboard() {
     homeowner: booking.homeownerName || 'Unknown Homeowner',
     homeownerPhone: booking.homeownerPhone || '',
     date: booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString() : 'N/A',
+    time: booking.bookingTime ? formatTime24to12(booking.bookingTime) : '',
     notes: booking.notes,
     status: booking.status,
   })
@@ -247,7 +257,7 @@ export default function WorkerDashboard() {
                       </div>
                     </div>
                     <div className="job-details">
-                      <p><strong>📅 Date:</strong> {job.date}</p>
+                      <p><strong>📅 Date:</strong> {job.date}{job.time && ` at ${job.time}`}</p>
                       {job.homeownerPhone && <p><strong>📞 Phone:</strong> {job.homeownerPhone}</p>}
                       {job.notes && <p><strong>📝 Notes:</strong> {job.notes}</p>}
                     </div>
@@ -296,7 +306,7 @@ export default function WorkerDashboard() {
                       <span className="status-badge">Accepted</span>
                     </div>
                     <div className="job-details">
-                      <p><strong>📅 Date:</strong> {job.date}</p>
+                      <p><strong>📅 Date:</strong> {job.date}{job.time && ` at ${job.time}`}</p>
                       {job.homeownerPhone && <p><strong>📞 Phone:</strong> {job.homeownerPhone}</p>}
                       {job.notes && <p><strong>📝 Notes:</strong> {job.notes}</p>}
                     </div>

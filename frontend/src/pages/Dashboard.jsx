@@ -3,6 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import api from '../api'
 import './Dashboard.css'
 
+function formatTime24to12(time24) {
+  if (!time24) return ''
+  const [hours, minutes] = time24.split(':')
+  const hour = parseInt(hours, 10)
+  const ampm = hour >= 12 ? 'PM' : 'AM'
+  const hour12 = hour % 12 || 12
+  return `${hour12}:${minutes} ${ampm}`
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('home')
@@ -200,7 +209,7 @@ export default function Dashboard() {
                         </h3>
                         <p className="booking-date">
                           {booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'N/A'}
-                          {booking.bookingTime && ` at ${booking.bookingTime}`}
+                          {booking.bookingTime && ` at ${formatTime24to12(booking.bookingTime)}`}
                         </p>
                       </div>
                       <div className="booking-actions">
@@ -252,7 +261,7 @@ export default function Dashboard() {
                       </h3>
                       <p className="booking-date">
                         {booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'N/A'}
-                        {booking.bookingTime && ` at ${booking.bookingTime}`}
+                        {booking.bookingTime && ` at ${formatTime24to12(booking.bookingTime)}`}
                       </p>
                     </div>
                     <div className="booking-actions">

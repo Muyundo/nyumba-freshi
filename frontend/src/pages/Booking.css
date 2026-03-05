@@ -129,6 +129,13 @@
   background-color: #1e40af;
 }
 
+.time-display {
+  font-size: 0.9rem;
+  color: #2563eb;
+  font-weight: 500;
+  margin: 0;
+}
+
 /* Mobile responsive */
 @media (max-width: 768px) {
   .booking-container {

@@ -16,6 +16,15 @@ function normalizeServiceKey(service) {
   return value
 }
 
+function formatTime24to12(time24) {
+  if (!time24) return ''
+  const [hours, minutes] = time24.split(':')
+  const hour = parseInt(hours, 10)
+  const ampm = hour >= 12 ? 'PM' : 'AM'
+  const hour12 = hour % 12 || 12
+  return `${hour12}:${minutes} ${ampm}`
+}
+
 export default function Booking() {
   const { workerId } = useParams()
   const [date, setDate] = useState('')
@@ -159,7 +168,7 @@ export default function Booking() {
             />
           </div>
           <div className="booking-form-group">
-            <label htmlFor="time">Time</label>
+            <label htmlFor="time">Time (AM/PM)</label>
             <input 
               id="time"
               type="time" 
@@ -167,6 +176,7 @@ export default function Booking() {
               onChange={(e) => setTime(e.target.value)} 
               required 
             />
+            {time && <p className="time-display">{formatTime24to12(time)}</p>}
           </div>
           <div className="booking-form-group">
             <label htmlFor="notes">Notes</label>
