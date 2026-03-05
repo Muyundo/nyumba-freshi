@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import api from '../api'
+import Header from '../components/Header'
 import './Workers.css'
 
 function normalizeServiceKey(service) {
@@ -17,13 +18,24 @@ function getReadableServiceFilter(service) {
   return service
 }
 
+function getWorkerInitials(fullName) {
+  return fullName
+    .split(' ')
+    .map((n) => n.charAt(0))
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
+
 export default function Workers() {
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const rawService = searchParams.get('service') || 'all'
   const serviceFilter = normalizeServiceKey(rawService)
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [favorites, setFavorites] = useState(new Set())
 
   const handleFilterChange = (event) => {
     const nextFilter = event.target.value
@@ -32,6 +44,18 @@ export default function Workers() {
       return
     }
     setSearchParams({ service: nextFilter })
+  }
+
+  const toggleFavorite = (workerId) => {
+    setFavorites((prev) => {
+      const newFavorites = new Set(prev)
+      if (newFavorites.has(workerId)) {
+        newFavorites.delete(workerId)
+      } else {
+        newFavorites.add(workerId)
+      }
+      return newFavorites
+    })
   }
 
   useEffect(() => {
@@ -69,51 +93,85 @@ export default function Workers() {
   }, [serviceFilter])
 
   return (
-    <div className="workers-container">
-      <h2>Workers</h2>
-      <div className="workers-filter-bar">
-        <label className="workers-filter-label" htmlFor="serviceFilter">Filter by service</label>
-        <select
-          id="serviceFilter"
-          className="workers-filter-select"
-          value={serviceFilter}
-          onChange={handleFilterChange}
-        >
-          <option value="all">All Services</option>
-          <option value="cleaning">House Cleaning</option>
-          <option value="laundry">Laundry</option>
-          <option value="both">Cleaning + Laundry</option>
-        </select>
-      </div>
+    <div className="workers-page">
+      <Header />
+      
+      <div className="workers-container">
+        <div className="workers-header">
+          <h1>Workers</h1>
+          <p>Browse and hire trusted professionals.</p>
+        </div>
 
-      {serviceFilter !== 'all' && <p>Filtering by service: {getReadableServiceFilter(serviceFilter)}</p>}
-      
-      {loading && <p className="loading-message">Loading workers...</p>}
-      {error && <p className="error-message">{error}</p>}
-      
-      {!loading && list.length === 0 && (
-        <p className="empty-message">
-          {serviceFilter !== 'all' ? 'No workers found for this service.' : 'No workers available.'}
-        </p>
-      )}
-      
-      <ul>
-        {list.map((w) => (
-          <li key={w.id}>
-            <div>
-              <Link to={`/workers/${w.id}`}>{w.fullName}</Link>
-              <div className="worker-services">
-                {w.services && w.services.length > 0 
-                  ? w.services.join(', ') 
-                  : 'No services listed'}
+        <div className="workers-filter-section">
+          <label className="workers-filter-label" htmlFor="serviceFilter">
+            Filter by service:
+          </label>
+          <select
+            id="serviceFilter"
+            className="workers-filter-select"
+            value={serviceFilter}
+            onChange={handleFilterChange}
+          >
+            <option value="all">All Services</option>
+            <option value="cleaning">House Cleaning</option>
+            <option value="laundry">Laundry</option>
+            <option value="both">Cleaning + Laundry</option>
+          </select>
+        </div>
+
+        {loading && <p className="loading-message">Loading workers...</p>}
+        {error && <p className="error-message">{error}</p>}
+        
+        {!loading && list.length === 0 && (
+          <p className="empty-message">
+            {serviceFilter !== 'all' ? 'No workers found for this service.' : 'No workers available.'}
+          </p>
+        )}
+        
+        {!loading && list.length > 0 && (
+          <div className="workers-grid">
+            {list.map((w) => (
+              <div key={w.id} className="worker-card">
+                <div className="worker-card-header">
+                  <div className="worker-avatar">{getWorkerInitials(w.fullName)}</div>
+                  <button
+                    className={`favorite-btn ${favorites.has(w.id) ? 'active' : ''}`}
+                    onClick={() => toggleFavorite(w.id)}
+                    aria-label="Add to favorites"
+                  >
+                    ♡
+                  </button>
+                </div>
+
+                <div className="worker-card-content">
+                  <Link to={`/workers/${w.id}`} className="worker-name">
+                    {w.fullName}
+                  </Link>
+                  
+                  <div className="worker-services">
+                    {w.services && w.services.length > 0 
+                      ? w.services.join(', ') 
+                      : 'No services listed'}
+                  </div>
+
+                  <div className="worker-rating">
+                    <span className="stars">★★★★★</span>
+                    <span className="rating-text">
+                      {w.rating || 'No reviews yet'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="worker-card-footer">
+                  <Link to={`/booking/${w.id}`} className="book-now-btn">
+                    Book Now
+                  </Link>
+                </div>
               </div>
-            </div>
-            <div className="worker-actions">
-              <Link to={`/booking/${w.id}`}>Book Now</Link>
-            </div>
-          </li>
-        ))}
-      </ul>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

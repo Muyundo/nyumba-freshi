@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../api'
+import Header from '../components/Header'
 import './Booking.css'
 
 const SERVICE_KEYS = {
@@ -99,66 +100,69 @@ export default function Booking() {
   }
 
   return (
-    <div className="booking-container">
-      <h2>Book {workerName || `Worker ${workerId}`}</h2>
-      {message && <div className={`booking-message ${message.includes('successfully') ? 'success' : 'error'}`}>{message}</div>}
-      <form className="booking-form" onSubmit={submit}>
-        <div className="booking-form-group">
-          <label>Service Type</label>
-          <div className="service-options">
-            {availableServices.includes('cleaning') && (
-              <label className="service-option">
-                <input
-                  type="checkbox"
-                  checked={selectedServices.cleaning}
-                  onChange={(e) => onToggleSingleService('cleaning', e.target.checked)}
-                />
-                House Cleaning
-              </label>
-            )}
-            {availableServices.includes('laundry') && (
-              <label className="service-option">
-                <input
-                  type="checkbox"
-                  checked={selectedServices.laundry}
-                  onChange={(e) => onToggleSingleService('laundry', e.target.checked)}
-                />
-                Laundry
-              </label>
-            )}
-            {supportsBoth && (
-              <label className="service-option">
-                <input
-                  type="checkbox"
-                  checked={selectedServices.cleaning && selectedServices.laundry}
-                  onChange={(e) => onToggleBoth(e.target.checked)}
-                />
-                Both
-              </label>
-            )}
+    <div className="booking-page">
+      <Header />
+      <div className="booking-container">
+        <h1>Book {workerName || `Worker ${workerId}`}</h1>
+        {message && <div className={`booking-message ${message.includes('successfully') ? 'success' : 'error'}`}>{message}</div>}
+        <form className="booking-form" onSubmit={submit}>
+          <div className="booking-form-group">
+            <label>Service Type</label>
+            <div className="service-options">
+              {availableServices.includes('cleaning') && (
+                <label className="service-option">
+                  <input
+                    type="checkbox"
+                    checked={selectedServices.cleaning}
+                    onChange={(e) => onToggleSingleService('cleaning', e.target.checked)}
+                  />
+                  House Cleaning
+                </label>
+              )}
+              {availableServices.includes('laundry') && (
+                <label className="service-option">
+                  <input
+                    type="checkbox"
+                    checked={selectedServices.laundry}
+                    onChange={(e) => onToggleSingleService('laundry', e.target.checked)}
+                  />
+                  Laundry
+                </label>
+              )}
+              {supportsBoth && (
+                <label className="service-option">
+                  <input
+                    type="checkbox"
+                    checked={selectedServices.cleaning && selectedServices.laundry}
+                    onChange={(e) => onToggleBoth(e.target.checked)}
+                  />
+                  Both
+                </label>
+              )}
+            </div>
           </div>
-        </div>
-        <div className="booking-form-group">
-          <label htmlFor="date">Date</label>
-          <input 
-            id="date"
-            type="date" 
-            value={date} 
-            onChange={(e) => setDate(e.target.value)} 
-            required 
-          />
-        </div>
-        <div className="booking-form-group">
-          <label htmlFor="notes">Notes</label>
-          <textarea 
-            id="notes"
-            value={notes} 
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Any special instructions or details for the worker..."
-          />
-        </div>
-        <button className="booking-submit" type="submit">Request Booking</button>
-      </form>
+          <div className="booking-form-group">
+            <label htmlFor="date">Date</label>
+            <input 
+              id="date"
+              type="date" 
+              value={date} 
+              onChange={(e) => setDate(e.target.value)} 
+              required 
+            />
+          </div>
+          <div className="booking-form-group">
+            <label htmlFor="notes">Notes</label>
+            <textarea 
+              id="notes"
+              value={notes} 
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Any special instructions or details for the worker..."
+            />
+          </div>
+          <button className="booking-submit" type="submit">Request Booking</button>
+        </form>
+      </div>
     </div>
   )
 }

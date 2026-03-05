@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import api from '../api'
+import Header from '../components/Header'
 import './WorkerProfile.css'
 
 // Simple demo profile using params
@@ -32,60 +33,72 @@ export default function WorkerProfile() {
 
   if (loading) {
     return (
-      <div className="worker-profile-container">
-        <p className="loading-message">Loading worker details...</p>
+      <div className="worker-profile-page">
+        <Header />
+        <div className="worker-profile-container">
+          <p className="loading-message">Loading worker details...</p>
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="worker-profile-container">
-        <p className="error-message">{error}</p>
-        <Link to="/workers" className="btn-back">Back to workers</Link>
+      <div className="worker-profile-page">
+        <Header />
+        <div className="worker-profile-container">
+          <p className="error-message">{error}</p>
+          <Link to="/workers" className="btn-back">Back to workers</Link>
+        </div>
       </div>
     )
   }
 
   if (!worker) {
     return (
-      <div className="worker-profile-container">
-        <p className="error-message">Worker not found</p>
-        <Link to="/workers" className="btn-back">Back to workers</Link>
+      <div className="worker-profile-page">
+        <Header />
+        <div className="worker-profile-container">
+          <p className="error-message">Worker not found</p>
+          <Link to="/workers" className="btn-back">Back to workers</Link>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="worker-profile-container">
-      <div className="worker-profile-header">
-        <h2>{worker.fullName}</h2>
-        <div className="worker-detail-row">
-          <strong>Phone:</strong> {worker.phone}
-        </div>
-        {worker.location && (
+    <div className="worker-profile-page">
+      <Header />
+      <div className="worker-profile-container">
+        <div className="worker-profile-header">
+          <h1>{worker.fullName}</h1>
           <div className="worker-detail-row">
-            <strong>Location:</strong> {worker.location}
+            <strong>Phone:</strong> {worker.phone}
           </div>
-        )}
-        {worker.estate && (
-          <div className="worker-detail-row">
-            <strong>Estate:</strong> {worker.estate}
+          {worker.location && (
+            <div className="worker-detail-row">
+              <strong>Location:</strong> {worker.location}
+            </div>
+          )}
+          {worker.estate && (
+            <div className="worker-detail-row">
+              <strong>Estate:</strong> {worker.estate}
+            </div>
+          )}
+          {worker.services && worker.services.length > 0 && (
+            <div className="worker-detail-row">
+              <strong>Services:</strong> {worker.services.join(', ')}
+            </div>
+          )}
+          {worker.availability && (
+            <div className="worker-detail-row">
+              <strong>Availability:</strong> {worker.availability}
+            </div>
+          )}
+          <div className="worker-profile-actions">
+            <Link to={`/booking/${id}`} className="btn-book">Book this worker</Link>
+            <Link to="/workers" className="btn-back">Back to workers</Link>
           </div>
-        )}
-        {worker.services && worker.services.length > 0 && (
-          <div className="worker-detail-row">
-            <strong>Services:</strong> {worker.services.join(', ')}
-          </div>
-        )}
-        {worker.availability && (
-          <div className="worker-detail-row">
-            <strong>Availability:</strong> {worker.availability}
-          </div>
-        )}
-        <div className="worker-profile-actions">
-          <Link to={`/booking/${id}`} className="btn-book">Book this worker</Link>
-          <Link to="/workers" className="btn-back">Back to workers</Link>
         </div>
       </div>
     </div>
