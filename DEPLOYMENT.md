@@ -6,7 +6,7 @@ This guide will help you deploy the Nyumba Freshi application to production usin
 
 - **Frontend**: Vercel (Free)
 - **Backend**: Railway (Free $5/month credit)
-- **Database**: SQLite (included with backend)
+- **Database**: PostgreSQL (included with Railway)
 
 ## Prerequisites
 
@@ -34,7 +34,13 @@ Before starting, ensure you have:
 1. In the deployment settings, set the **Root Directory** to: `server`
 2. Railway will auto-detect your `package.json`
 
-### 1.4 Set Environment Variables
+### 1.4 Add PostgreSQL Database
+1. In your Railway project, click **Add**
+2. Select **PostgreSQL**
+3. Railway will automatically create a PostgreSQL database and add `DATABASE_URL` environment variable
+4. This is automatically connected to your backend service
+
+### 1.5 Set Environment Variables
 In the Railway dashboard:
 1. Go to your project → Variables tab
 2. Add these variables:
@@ -50,17 +56,13 @@ In the Railway dashboard:
    openssl rand -hex 32
    ```
    Or generate one online at: https://randomkeygen.com/
+   
+   **Note**: `DATABASE_URL` is automatically added by Railway when you add PostgreSQL in step 1.4
 
-### 1.5 Deploy
+### 1.6 Deploy
 1. Railway will automatically build and deploy your backend
 2. After deployment, you'll get a URL like: `https://your-app.railway.app`
 3. **Copy this URL** - you'll need it for the frontend
-
-### 1.6 Enable Persistent Storage (for Database)
-1. In Railway project, go to Settings
-2. Click "Add Volume"
-3. Mount path: `/app/server` (to persist the SQLite database)
-4. This ensures your database survives redeployments
 
 ### 1.7 Test Backend
 Visit: `https://your-app.railway.app/api/health`

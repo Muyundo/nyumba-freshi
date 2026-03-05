@@ -1,60 +1,78 @@
-const Database = require('better-sqlite3')
-const path = require('path')
+const { Pool } = require('pg')
 
-// Create or open SQLite database
-const dbPath = path.join(__dirname, '..', 'nyumba_freshi.db')
-const db = new Database(dbPath)
+// PostgreSQL connection pool
+// Uses DATABASE_URL from environment (automatically set by Railway)
+// For local dev, set in .env file
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/nyumba_freshi',
+})
 
-console.log(`SQLite database initialized at: ${dbPath}`)
+console.log('PostgreSQL connection pool initialized')
 
-// Create tables if they don't exist
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    role TEXT,
-    full_name TEXT,
-    phone TEXT,
-    password_hash TEXT,
-    location TEXT,
-    estate TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  )
-`)
+// Initialize database schema
+async function initializeDatabase() {
+  try {
+    // Create users table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        role TEXT,
+        full_name TEXT,
+        phone TEXT,
+        password_hash TEXT,
+        location TEXT,
+        estate TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS worker_profiles (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    id_number TEXT,
-    availability TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-  )
-`)
+    // Create worker_profiles table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS worker_profiles (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER,
+        id_number TEXT,
+        availability TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `)
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS worker_services (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    worker_profile_id INTEGER,
-    service TEXT,
-    FOREIGN KEY (worker_profile_id) REFERENCES worker_profiles(id)
-  )
-`)
+    // Create worker_services table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS worker_services (
+        id SERIAL PRIMARY KEY,
+        worker_profile_id INTEGER,
+        service TEXT,
+        FOREIGN KEY (worker_profile_id) REFERENCES worker_profiles(id) ON DELETE CASCADE
+      )
+    `)
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS bookings (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    homeowner_id INTEGER,
-    worker_id INTEGER,
-    service TEXT,
-    booking_date TEXT,
-    notes TEXT,
-    status TEXT DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (homeowner_id) REFERENCES users(id),
-    FOREIGN KEY (worker_id) REFERENCES users(id)
-  )
-`)
+    // Create bookings table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS bookings (
+        id SERIAL PRIMARY KEY,
+        homeowner_id INTEGER,
+        worker_id INTEGER,
+        service TEXT,
+        booking_date TEXT,
+        notes TEXT,
+        status TEXT DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (homeowner_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (worker_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `)
 
-module.exports = db
+    console.log('PostgreSQL tables initialized successfully')
+  } catch (err) {
+    console.error('Error initializing database:', err.message)
+    throw err
+  }
+}
+
+// Initialize on module load
+initializeDatabase()
+
+module.exports = pool

@@ -24,10 +24,10 @@ app.get('/api/hello', (req, res) => {
   res.json({ message: 'Hello from Nyumba Freshi backend' })
 })
 
-app.get('/api/dbtime', (req, res) => {
+app.get('/api/dbtime', async (req, res) => {
   try {
-    const row = db.prepare("SELECT datetime('now') as now").get()
-    res.json({ now: row.now })
+    const result = await db.query("SELECT NOW() as now")
+    res.json({ now: result.rows[0].now })
   } catch (err) {
     console.error('DB query failed', err)
     res.status(500).json({ error: 'DB query failed' })
@@ -40,10 +40,11 @@ app.post('/api/login', async (req, res) => {
 
   try {
     const normalizedPhone = normalizePhone(phone)
-    const findUser = db.prepare(
-      'SELECT id, role, full_name, phone, password_hash FROM users WHERE role = ? AND phone = ? LIMIT 1'
+    const result = await db.query(
+      'SELECT id, role, full_name, phone, password_hash FROM users WHERE role = $1 AND phone = $2 LIMIT 1',
+      [role, normalizedPhone]
     )
-    const user = findUser.get(role, normalizedPhone)
+    const user = result.rows[0]
 
     if (!user) return res.status(401).json({ error: 'Invalid credentials' })
 
@@ -86,53 +87,63 @@ app.post('/api/register', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10)
     const normalizedPhone = normalizePhone(phone)
 
-    const existingUser = db
-      .prepare('SELECT id FROM users WHERE role = ? AND phone = ? LIMIT 1')
-      .get(role, normalizedPhone)
+    const existingUserResult = await db.query(
+      'SELECT id FROM users WHERE role = $1 AND phone = $2 LIMIT 1',
+      [role, normalizedPhone]
+    )
 
-    if (existingUser) {
+    if (existingUserResult.rows.length > 0) {
       return res.status(409).json({ error: 'A user with this role and phone already exists' })
     }
 
-    // SQLite transaction
-    const insertUser = db.prepare(
-      'INSERT INTO users (role, full_name, phone, password_hash, location, estate) VALUES (?, ?, ?, ?, ?, ?)'
-    )
-    const insertWorkerProfile = db.prepare(
-      'INSERT INTO worker_profiles (user_id, id_number, availability) VALUES (?, ?, ?)'
-    )
-    const insertWorkerService = db.prepare(
-      'INSERT INTO worker_services (worker_profile_id, service) VALUES (?, ?)'
-    )
+    // Start transaction
+    const client = await db.connect()
+    try {
+      await client.query('BEGIN')
 
-    const transaction = db.transaction(() => {
-      const result = insertUser.run(role, fullName, normalizedPhone, passwordHash, location || null, estate || null)
-      const userId = result.lastInsertRowid
+      // Insert user
+      const userResult = await client.query(
+        'INSERT INTO users (role, full_name, phone, password_hash, location, estate) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+        [role, fullName, normalizedPhone, passwordHash, location || null, estate || null]
+      )
+      const userId = userResult.rows[0].id
 
       if (role === 'Worker') {
-        const workerResult = insertWorkerProfile.run(userId, idNumber || null, availability || null)
-        const profileId = workerResult.lastInsertRowid
-        
+        // Insert worker profile
+        const profileResult = await client.query(
+          'INSERT INTO worker_profiles (user_id, id_number, availability) VALUES ($1, $2, $3) RETURNING id',
+          [userId, idNumber || null, availability || null]
+        )
+        const profileId = profileResult.rows[0].id
+
+        // Insert services
         if (Array.isArray(servicesOffered)) {
           for (const service of servicesOffered) {
-            insertWorkerService.run(profileId, service)
+            await client.query(
+              'INSERT INTO worker_services (worker_profile_id, service) VALUES ($1, $2)',
+              [profileId, service]
+            )
           }
         }
       }
 
-      return userId
-    })
+      await client.query('COMMIT')
 
-    const userId = transaction()
-    return res.status(201).json({
-      message: 'Registered successfully. Please login.',
-      user: {
-        userId,
-        role,
-        fullName,
-        phone: normalizedPhone,
-      },
-    })
+      return res.status(201).json({
+        message: 'Registered successfully. Please login.',
+        user: {
+          userId,
+          role,
+          fullName,
+          phone: normalizedPhone,
+        },
+      })
+    } catch (err) {
+      await client.query('ROLLBACK')
+      throw err
+    } finally {
+      client.release()
+    }
   } catch (err) {
     console.error('Registration error', err)
     return res.status(500).json({ error: 'Registration error' })
@@ -140,15 +151,15 @@ app.post('/api/register', async (req, res) => {
 })
 
 // Protected demo route
-app.get('/api/protected', verifyTokenMiddleware, (req, res) => {
+app.get('/api/protected', verifyTokenMiddleware, async (req, res) => {
   const name = req.user.fullName || req.user.username || 'User'
   res.json({ message: `Hello ${name}`, user: req.user })
 })
 
 // Get all workers with their services
-app.get('/api/workers', (req, res) => {
+app.get('/api/workers', async (req, res) => {
   try {
-    const query = db.prepare(`
+    const result = await db.query(`
       SELECT 
         u.id,
         u.full_name,
@@ -156,26 +167,25 @@ app.get('/api/workers', (req, res) => {
         u.location,
         u.estate,
         wp.id as profile_id,
-        GROUP_CONCAT(ws.service, ',') as services
+        STRING_AGG(ws.service, ',') as services
       FROM users u
       LEFT JOIN worker_profiles wp ON u.id = wp.user_id
       LEFT JOIN worker_services ws ON wp.id = ws.worker_profile_id
       WHERE u.role = 'Worker'
-      GROUP BY u.id
+      GROUP BY u.id, wp.id
+      ORDER BY u.id
     `)
-    const workers = query.all()
     
-    // Transform services string into array
-    const transformedWorkers = workers.map(w => ({
+    const workers = result.rows.map(w => ({
       id: w.id,
       fullName: w.full_name,
       phone: w.phone,
       location: w.location,
       estate: w.estate,
-      services: w.services ? w.services.split(',') : []
+      services: w.services ? w.services.split(',').filter(s => s) : []
     }))
     
-    res.json(transformedWorkers)
+    res.json(workers)
   } catch (err) {
     console.error('Get workers error', err)
     res.status(500).json({ error: 'Failed to fetch workers' })
@@ -183,10 +193,10 @@ app.get('/api/workers', (req, res) => {
 })
 
 // Get single worker details
-app.get('/api/workers/:id', (req, res) => {
+app.get('/api/workers/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const query = db.prepare(`
+    const result = await db.query(`
       SELECT 
         u.id,
         u.full_name,
@@ -196,14 +206,15 @@ app.get('/api/workers/:id', (req, res) => {
         wp.id as profile_id,
         wp.id_number,
         wp.availability,
-        GROUP_CONCAT(ws.service, ',') as services
+        STRING_AGG(ws.service, ',') as services
       FROM users u
       LEFT JOIN worker_profiles wp ON u.id = wp.user_id
       LEFT JOIN worker_services ws ON wp.id = ws.worker_profile_id
-      WHERE u.role = 'Worker' AND u.id = ?
-      GROUP BY u.id
-    `)
-    const worker = query.get(id)
+      WHERE u.role = 'Worker' AND u.id = $1
+      GROUP BY u.id, wp.id
+    `, [id])
+    
+    const worker = result.rows[0]
     
     if (!worker) {
       return res.status(404).json({ error: 'Worker not found' })
@@ -217,7 +228,7 @@ app.get('/api/workers/:id', (req, res) => {
       estate: worker.estate,
       idNumber: worker.id_number,
       availability: worker.availability,
-      services: worker.services ? worker.services.split(',') : []
+      services: worker.services ? worker.services.split(',').filter(s => s) : []
     })
   } catch (err) {
     console.error('Get worker error', err)
@@ -226,7 +237,7 @@ app.get('/api/workers/:id', (req, res) => {
 })
 
 // Create a booking
-app.post('/api/bookings', verifyTokenMiddleware, (req, res) => {
+app.post('/api/bookings', verifyTokenMiddleware, async (req, res) => {
   const { workerId, service, bookingDate, notes } = req.body || {}
   const homeownerId = req.user.userId
 
@@ -235,13 +246,13 @@ app.post('/api/bookings', verifyTokenMiddleware, (req, res) => {
   }
 
   try {
-    const insertBooking = db.prepare(
-      'INSERT INTO bookings (homeowner_id, worker_id, service, booking_date, notes, status) VALUES (?, ?, ?, ?, ?, ?)'
+    const result = await db.query(
+      'INSERT INTO bookings (homeowner_id, worker_id, service, booking_date, notes, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+      [homeownerId, workerId, service, bookingDate, notes || '', 'pending']
     )
-    const result = insertBooking.run(homeownerId, workerId, service, bookingDate, notes || '', 'pending')
     
     res.status(201).json({
-      id: result.lastInsertRowid,
+      id: result.rows[0].id,
       homeownerId,
       workerId,
       service,
@@ -257,7 +268,7 @@ app.post('/api/bookings', verifyTokenMiddleware, (req, res) => {
 })
 
 // Get bookings for a homeowner
-app.get('/api/homeowners/:homeownerId/bookings', verifyTokenMiddleware, (req, res) => {
+app.get('/api/homeowners/:homeownerId/bookings', verifyTokenMiddleware, async (req, res) => {
   const { homeownerId } = req.params
   const requesterId = String(req.user.userId)
 
@@ -266,7 +277,7 @@ app.get('/api/homeowners/:homeownerId/bookings', verifyTokenMiddleware, (req, re
   }
 
   try {
-    const query = db.prepare(`
+    const result = await db.query(`
       SELECT
         b.id,
         b.homeowner_id,
@@ -280,13 +291,11 @@ app.get('/api/homeowners/:homeownerId/bookings', verifyTokenMiddleware, (req, re
         u.phone as worker_phone
       FROM bookings b
       LEFT JOIN users u ON b.worker_id = u.id
-      WHERE b.homeowner_id = ?
+      WHERE b.homeowner_id = $1
       ORDER BY b.created_at DESC
-    `)
+    `, [homeownerId])
 
-    const bookings = query.all(homeownerId)
-
-    return res.json(bookings.map((b) => ({
+    const bookings = result.rows.map((b) => ({
       id: b.id,
       homeownerId: b.homeowner_id,
       workerId: b.worker_id,
@@ -297,7 +306,9 @@ app.get('/api/homeowners/:homeownerId/bookings', verifyTokenMiddleware, (req, re
       createdAt: b.created_at,
       workerName: b.worker_name,
       workerPhone: b.worker_phone,
-    })))
+    }))
+
+    return res.json(bookings)
   } catch (err) {
     console.error('Get homeowner bookings error', err)
     return res.status(500).json({ error: 'Failed to fetch homeowner bookings' })
@@ -305,7 +316,7 @@ app.get('/api/homeowners/:homeownerId/bookings', verifyTokenMiddleware, (req, re
 })
 
 // Get bookings for a worker
-app.get('/api/workers/:workerId/bookings', verifyTokenMiddleware, (req, res) => {
+app.get('/api/workers/:workerId/bookings', verifyTokenMiddleware, async (req, res) => {
   const { workerId } = req.params
   const requesterId = String(req.user.userId)
 
@@ -314,7 +325,7 @@ app.get('/api/workers/:workerId/bookings', verifyTokenMiddleware, (req, res) => 
   }
 
   try {
-    const query = db.prepare(`
+    const result = await db.query(`
       SELECT 
         b.id,
         b.homeowner_id,
@@ -328,12 +339,11 @@ app.get('/api/workers/:workerId/bookings', verifyTokenMiddleware, (req, res) => 
         u.phone as homeowner_phone
       FROM bookings b
       LEFT JOIN users u ON b.homeowner_id = u.id
-      WHERE b.worker_id = ?
+      WHERE b.worker_id = $1
       ORDER BY b.created_at DESC
-    `)
-    const bookings = query.all(workerId)
+    `, [workerId])
     
-    res.json(bookings.map(b => ({
+    const bookings = result.rows.map(b => ({
       id: b.id,
       homeownerId: b.homeowner_id,
       workerId: b.worker_id,
@@ -344,7 +354,9 @@ app.get('/api/workers/:workerId/bookings', verifyTokenMiddleware, (req, res) => 
       createdAt: b.created_at,
       homeownerName: b.homeowner_name,
       homeownerPhone: b.homeowner_phone
-    })))
+    }))
+    
+    res.json(bookings)
   } catch (err) {
     console.error('Get worker bookings error', err)
     res.status(500).json({ error: 'Failed to fetch bookings' })
@@ -352,7 +364,7 @@ app.get('/api/workers/:workerId/bookings', verifyTokenMiddleware, (req, res) => 
 })
 
 // Accept, decline, or cancel a booking
-app.patch('/api/bookings/:bookingId', verifyTokenMiddleware, (req, res) => {
+app.patch('/api/bookings/:bookingId', verifyTokenMiddleware, async (req, res) => {
   const { bookingId } = req.params
   const { status } = req.body || {}
   const workerId = req.user.userId
@@ -362,16 +374,16 @@ app.patch('/api/bookings/:bookingId', verifyTokenMiddleware, (req, res) => {
   }
 
   try {
-    const booking = db.prepare('SELECT * FROM bookings WHERE id = ? AND worker_id = ?').get(bookingId, workerId)
+    const bookingResult = await db.query('SELECT * FROM bookings WHERE id = $1 AND worker_id = $2', [bookingId, workerId])
     
-    if (!booking) {
+    if (bookingResult.rows.length === 0) {
       return res.status(404).json({ error: 'Booking not found or not authorized' })
     }
 
-    const updateBooking = db.prepare(
-      'UPDATE bookings SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+    await db.query(
+      'UPDATE bookings SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [status, bookingId]
     )
-    updateBooking.run(status, bookingId)
     
     res.json({
       id: bookingId,
