@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { setTokenExpiredCallback } from './api'
-import Home from './pages/Home'
 import Login from './pages/Login'
 import Workers from './pages/Workers'
 import WorkerProfile from './pages/WorkerProfile'
@@ -43,7 +42,7 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route
