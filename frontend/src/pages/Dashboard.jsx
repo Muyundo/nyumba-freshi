@@ -78,6 +78,7 @@ export default function Dashboard() {
     service: booking.service,
     worker: booking.workerName,
     date: booking.bookingDate,
+    time: booking.bookingTime,
     icon: getServiceIcon(booking.service),
   }))
 
@@ -199,6 +200,7 @@ export default function Dashboard() {
                         </h3>
                         <p className="booking-date">
                           {booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'N/A'}
+                          {booking.bookingTime && ` at ${booking.bookingTime}`}
                         </p>
                       </div>
                       <div className="booking-actions">
@@ -250,6 +252,7 @@ export default function Dashboard() {
                       </h3>
                       <p className="booking-date">
                         {booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'N/A'}
+                        {booking.bookingTime && ` at ${booking.bookingTime}`}
                       </p>
                     </div>
                     <div className="booking-actions">

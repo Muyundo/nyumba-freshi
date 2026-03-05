@@ -19,6 +19,7 @@ function normalizeServiceKey(service) {
 export default function Booking() {
   const { workerId } = useParams()
   const [date, setDate] = useState('')
+  const [time, setTime] = useState('')
   const [notes, setNotes] = useState('')
   const [workerName, setWorkerName] = useState('')
   const [availableServices, setAvailableServices] = useState([])
@@ -81,12 +82,18 @@ export default function Booking() {
       return
     }
 
+    if (!time) {
+      setMessage('Please select a time')
+      return
+    }
+
     try {
       const serviceString = chosenServices.map((key) => SERVICE_KEYS[key] || key).join(' + ')
       const payload = {
         workerId: parseInt(workerId, 10),
         service: serviceString,
         bookingDate: date,
+        bookingTime: time,
         notes: notes || '',
       }
 
@@ -148,6 +155,16 @@ export default function Booking() {
               type="date" 
               value={date} 
               onChange={(e) => setDate(e.target.value)} 
+              required 
+            />
+          </div>
+          <div className="booking-form-group">
+            <label htmlFor="time">Time</label>
+            <input 
+              id="time"
+              type="time" 
+              value={time} 
+              onChange={(e) => setTime(e.target.value)} 
               required 
             />
           </div>
