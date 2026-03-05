@@ -11,64 +11,90 @@ console.log('PostgreSQL connection pool initialized')
 
 // Initialize database schema
 async function initializeDatabase() {
-  try {
-    // Create users table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        role TEXT,
-        full_name TEXT,
-        phone TEXT,
-        password_hash TEXT,
-        location TEXT,
-        estate TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `)
+  // Retry logic for database connection
+  const maxRetries = 5
+  const retryDelay = 3000 // 3 seconds
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Attempting to connect to PostgreSQL (attempt ${attempt}/${maxRetries})...`)
+      
+      // Test connection first
+      await pool.query('SELECT NOW()')
+      console.log('✓ PostgreSQL connection established')
+      
+      // Create users table
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS users (
+          id SERIAL PRIMARY KEY,
+          role TEXT,
+          full_name TEXT,
+          phone TEXT,
+          password_hash TEXT,
+          location TEXT,
+          estate TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `)
 
-    // Create worker_profiles table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS worker_profiles (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER,
-        id_number TEXT,
-        availability TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      )
-    `)
+      // Create worker_profiles table
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS worker_profiles (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER,
+          id_number TEXT,
+          availability TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      `)
 
-    // Create worker_services table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS worker_services (
-        id SERIAL PRIMARY KEY,
-        worker_profile_id INTEGER,
-        service TEXT,
-        FOREIGN KEY (worker_profile_id) REFERENCES worker_profiles(id) ON DELETE CASCADE
-      )
-    `)
+      // Create worker_services table
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS worker_services (
+          id SERIAL PRIMARY KEY,
+          worker_profile_id INTEGER,
+          service TEXT,
+          FOREIGN KEY (worker_profile_id) REFERENCES worker_profiles(id) ON DELETE CASCADE
+        )
+      `)
 
-    // Create bookings table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS bookings (
-        id SERIAL PRIMARY KEY,
-        homeowner_id INTEGER,
-        worker_id INTEGER,
-        service TEXT,
-        booking_date TEXT,
-        notes TEXT,
-        status TEXT DEFAULT 'pending',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (homeowner_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (worker_id) REFERENCES users(id) ON DELETE CASCADE
-      )
-    `)
+      // Create bookings table
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS bookings (
+          id SERIAL PRIMARY KEY,
+          homeowner_id INTEGER,
+          worker_id INTEGER,
+          service TEXT,
+          booking_date TEXT,
+          notes TEXT,
+          status TEXT DEFAULT 'pending',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (homeowner_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY (worker_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      `)
 
-    console.log('PostgreSQL tables initialized successfully')
-  } catch (err) {
-    console.error('Error initializing database:', err.message)
-    throw err
+      console.log('✓ PostgreSQL tables initialized successfully')
+      return // Success - exit the retry loop
+      
+    } catch (err) {
+      console.error(`Error initializing database (attempt ${attempt}/${maxRetries}):`, err.message)
+      
+      if (attempt === maxRetries) {
+        console.error('❌ Failed to connect to PostgreSQL after maximum retries')
+        console.error('Please ensure:')
+        console.error('  1. PostgreSQL service is added to your Railway project')
+        console.error('  2. DATABASE_URL environment variable is set')
+        console.error('  3. PostgreSQL service is running')
+        throw err
+      }
+      
+      // Wait before retrying
+      console.log(`Retrying in ${retryDelay / 1000} seconds...`)
+      await new Promise(resolve => setTimeout(resolve, retryDelay))
+    }
   }
 }
 
