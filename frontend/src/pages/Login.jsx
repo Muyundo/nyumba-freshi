@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import api from '../api'
-import './Register.css'
+import './Login.css'
 
 export default function Login() {
   const [role, setRole] = useState('Homeowner')
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState(null)
+  const [messageType, setMessageType] = useState('error')
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -15,7 +16,10 @@ export default function Login() {
     const state = location.state || {}
     if (state.role) setRole(state.role)
     if (state.phone) setPhone(state.phone)
-    if (state.fromRegister) setMessage('Registration successful. Please log in.')
+    if (state.fromRegister) {
+      setMessage('Registration successful. Please log in.')
+      setMessageType('success')
+    }
   }, [location.state])
 
   const submit = async (e) => {
@@ -23,6 +27,7 @@ export default function Login() {
     setMessage(null)
     if (!phone || !password) {
       setMessage('Please enter phone number and password')
+      setMessageType('error')
       return
     }
 
@@ -34,24 +39,28 @@ export default function Login() {
       navigate('/dashboard')
     } catch (err) {
       setMessage('Login failed: Invalid credentials or user does not exist')
+      setMessageType('error')
     }
   }
 
   return (
-    <div className="register-container">
-      <div className="register-card">
-        <div className="register-header">
-          <img src="/logo192.png" alt="logo" />
-          <h2>Login</h2>
-          <div className="register-sub">Login as Homeowner or Worker to continue.</div>
+    <div className="login-container">
+      <div className="login-card">
+        <div className="login-header">
+          <div className="logo-section">
+            <img src="/logo192.png" alt="HomeEase logo" />
+            <span className="logo-text"></span>
+          </div>
+          <h1 className="login-title">Welcome</h1>
+          <p className="login-subtitle">Login as Homeowner or Worker to continue.</p>
         </div>
 
-        <form className="register-form" onSubmit={submit}>
+        <form className="login-form" onSubmit={submit}>
           <div className="form-group">
             <label>Login as</label>
             <select className="form-control" value={role} onChange={(e) => setRole(e.target.value)}>
-              <option>Homeowner</option>
-              <option>Worker</option>
+              <option value="Homeowner">Homeowner</option>
+              <option value="Worker">Worker</option>
             </select>
           </div>
 
@@ -59,6 +68,7 @@ export default function Login() {
             <label>Phone Number</label>
             <input
               className="form-control"
+              type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="0712 345 678"
@@ -77,11 +87,18 @@ export default function Login() {
           </div>
 
           <button className="btn-primary" type="submit">Login</button>
-          {message && <div className={`message ${message.startsWith('Login failed') ? 'error' : ''}`}>{message}</div>}
+          
+          {message && (
+            <div className={`message ${messageType}`}>
+              {message}
+            </div>
+          )}
         </form>
 
-        <div className="footer-note">
-          Don&apos;t have an account? <Link to="/register">Register</Link>
+        <div className="footer-section">
+          <p className="footer-text">
+            Don&apos;t have an account? <Link to="/register">Register</Link>
+          </p>
         </div>
       </div>
     </div>
