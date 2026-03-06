@@ -7,7 +7,8 @@
     "start": "node src/index.js",
     "dev": "cross-env DATABASE_URL=postgresql://postgres:postgres123@localhost:5432/nyumba_freshi nodemon --watch src --exec node src/index.js",
     "ngrok": "ngrok http 4000",
-    "migrate": "cross-env DATABASE_URL=postgresql://postgres:postgres123@localhost:5432/nyumba_freshi node src/migrate.js"
+    "migrate": "cross-env DATABASE_URL=postgresql://postgres:postgres123@localhost:5432/nyumba_freshi node src/migrate.js",
+    "update-schema": "cross-env DATABASE_URL=postgresql://postgres:postgres123@localhost:5432/nyumba_freshi node src/update-schema.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

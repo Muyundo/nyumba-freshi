@@ -28,7 +28,8 @@ async function initializeDatabase() {
         CREATE TABLE IF NOT EXISTS users (
           id SERIAL PRIMARY KEY,
           role TEXT,
-          full_name TEXT,
+          first_name TEXT,
+          last_name TEXT,
           phone TEXT,
           password_hash TEXT,
           location TEXT,

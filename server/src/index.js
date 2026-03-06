@@ -41,7 +41,7 @@ app.post('/api/login', async (req, res) => {
   try {
     const normalizedPhone = normalizePhone(phone)
     const result = await db.query(
-      'SELECT id, role, full_name, phone, password_hash FROM users WHERE role = $1 AND phone = $2 LIMIT 1',
+      'SELECT id, role, first_name, last_name, phone, password_hash FROM users WHERE role = $1 AND phone = $2 LIMIT 1',
       [role, normalizedPhone]
     )
     const user = result.rows[0]
@@ -51,13 +51,16 @@ app.post('/api/login', async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password_hash)
     if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' })
 
-    const token = signToken({ userId: user.id, role: user.role, fullName: user.full_name })
+    const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim()
+    const token = signToken({ userId: user.id, role: user.role, firstName: user.first_name, lastName: user.last_name })
     return res.json({
       token,
       user: {
         userId: user.id,
         role: user.role,
-        fullName: user.full_name,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        fullName: fullName,
         phone: user.phone,
       },
     })
@@ -71,7 +74,8 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/register', async (req, res) => {
   const {
     role = 'Homeowner',
-    fullName,
+    firstName,
+    lastName,
     phone,
     location,
     estate,
@@ -81,7 +85,7 @@ app.post('/api/register', async (req, res) => {
     availability,
   } = req.body || {}
 
-  if (!fullName || !phone || !password) return res.status(400).json({ error: 'fullName, phone and password required' })
+  if (!firstName || !lastName || !phone || !password) return res.status(400).json({ error: 'firstName, lastName, phone and password required' })
 
   try {
     const passwordHash = await bcrypt.hash(password, 10)
@@ -103,8 +107,8 @@ app.post('/api/register', async (req, res) => {
 
       // Insert user
       const userResult = await client.query(
-        'INSERT INTO users (role, full_name, phone, password_hash, location, estate) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-        [role, fullName, normalizedPhone, passwordHash, location || null, estate || null]
+        'INSERT INTO users (role, first_name, last_name, phone, password_hash, location, estate) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+        [role, firstName, lastName, normalizedPhone, passwordHash, location || null, estate || null]
       )
       const userId = userResult.rows[0].id
 
@@ -134,7 +138,8 @@ app.post('/api/register', async (req, res) => {
         user: {
           userId,
           role,
-          fullName,
+          firstName,
+          lastName,
           phone: normalizedPhone,
         },
       })
@@ -152,7 +157,7 @@ app.post('/api/register', async (req, res) => {
 
 // Protected demo route
 app.get('/api/protected', verifyTokenMiddleware, async (req, res) => {
-  const name = req.user.fullName || req.user.username || 'User'
+  const name = req.user.firstName ? `${req.user.firstName} ${req.user.lastName || ''}`.trim() : req.user.username || 'User'
   res.json({ message: `Hello ${name}`, user: req.user })
 })
 
@@ -162,7 +167,8 @@ app.get('/api/workers', async (req, res) => {
     const result = await db.query(`
       SELECT 
         u.id,
-        u.full_name,
+        u.first_name,
+        u.last_name,
         u.phone,
         u.location,
         u.estate,
@@ -178,7 +184,9 @@ app.get('/api/workers', async (req, res) => {
     
     const workers = result.rows.map(w => ({
       id: w.id,
-      fullName: w.full_name,
+      firstName: w.first_name,
+      lastName: w.last_name,
+      fullName: `${w.first_name || ''} ${w.last_name || ''}`.trim(),
       phone: w.phone,
       location: w.location,
       estate: w.estate,
@@ -199,7 +207,8 @@ app.get('/api/workers/:id', async (req, res) => {
     const result = await db.query(`
       SELECT 
         u.id,
-        u.full_name,
+        u.first_name,
+        u.last_name,
         u.phone,
         u.location,
         u.estate,
@@ -222,7 +231,9 @@ app.get('/api/workers/:id', async (req, res) => {
     
     res.json({
       id: worker.id,
-      fullName: worker.full_name,
+      firstName: worker.first_name,
+      lastName: worker.last_name,
+      fullName: `${worker.first_name || ''} ${worker.last_name || ''}`.trim(),
       phone: worker.phone,
       location: worker.location,
       estate: worker.estate,
@@ -287,7 +298,8 @@ app.get('/api/homeowners/:homeownerId/bookings', verifyTokenMiddleware, async (r
         b.notes,
         b.status,
         b.created_at,
-        u.full_name as worker_name,
+        u.first_name as worker_first_name,
+        u.last_name as worker_last_name,
         u.phone as worker_phone
       FROM bookings b
       LEFT JOIN users u ON b.worker_id = u.id
@@ -304,7 +316,7 @@ app.get('/api/homeowners/:homeownerId/bookings', verifyTokenMiddleware, async (r
       notes: b.notes,
       status: b.status,
       createdAt: b.created_at,
-      workerName: b.worker_name,
+      workerName: `${b.worker_first_name || ''} ${b.worker_last_name || ''}`.trim(),
       workerPhone: b.worker_phone,
     }))
 
@@ -335,7 +347,8 @@ app.get('/api/workers/:workerId/bookings', verifyTokenMiddleware, async (req, re
         b.notes,
         b.status,
         b.created_at,
-        u.full_name as homeowner_name,
+        u.first_name as homeowner_first_name,
+        u.last_name as homeowner_last_name,
         u.phone as homeowner_phone
       FROM bookings b
       LEFT JOIN users u ON b.homeowner_id = u.id
@@ -352,7 +365,7 @@ app.get('/api/workers/:workerId/bookings', verifyTokenMiddleware, async (req, re
       notes: b.notes,
       status: b.status,
       createdAt: b.created_at,
-      homeownerName: b.homeowner_name,
+      homeownerName: `${b.homeowner_first_name || ''} ${b.homeowner_last_name || ''}`.trim(),
       homeownerPhone: b.homeowner_phone
     }))
     

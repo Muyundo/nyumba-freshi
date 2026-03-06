@@ -30,9 +30,14 @@ async function migrate() {
     console.log('\nMigrating users...')
     const users = sqlite.prepare('SELECT * FROM users').all()
     for (const user of users) {
+      // Split full_name into first_name and last_name
+      const nameParts = (user.full_name || '').trim().split(/\s+/)
+      const firstName = nameParts[0] || ''
+      const lastName = nameParts.slice(1).join(' ') || ''
+      
       await pg.query(
-        'INSERT INTO users (id, role, full_name, phone, password_hash, location, estate, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (id) DO NOTHING',
-        [user.id, user.role, user.full_name, user.phone, user.password_hash, user.location, user.estate, user.created_at]
+        'INSERT INTO users (id, role, first_name, last_name, phone, password_hash, location, estate, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT (id) DO NOTHING',
+        [user.id, user.role, firstName, lastName, user.phone, user.password_hash, user.location, user.estate, user.created_at]
       )
     }
     // Update sequence

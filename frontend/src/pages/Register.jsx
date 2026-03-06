@@ -5,7 +5,8 @@ import './Register.css'
 
 export default function Register() {
   const [role, setRole] = useState('Homeowner')
-  const [fullName, setFullName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [phone, setPhone] = useState('')
   const [location, setLocation] = useState('')
   const [estate, setEstate] = useState('')
@@ -21,7 +22,7 @@ export default function Register() {
   const submit = async (e) => {
     e.preventDefault()
     setMessage(null)
-    if (!fullName || !phone || !password) {
+    if (!firstName || !lastName || !phone || !password) {
       setMessage('Please fill required fields')
       setMessageType('error')
       return
@@ -33,7 +34,7 @@ export default function Register() {
     }
 
     try {
-      const payload = { role, fullName, phone, location, estate, password }
+      const payload = { role, firstName, lastName, phone, location, estate, password }
       if (role === 'Worker') {
         payload.idNumber = idNumber
         payload.servicesOffered = Object.keys(servicesOffered).filter((k) => servicesOffered[k])
@@ -59,7 +60,7 @@ export default function Register() {
         <div className="register-header">
           <div className="logo-section">
             <img src="/logo192.png" alt="HomeEase logo" />
-            <span className="logo-text">HomeEase</span>
+            <span className="logo-text"></span>
           </div>
           <h2>Register</h2>
           <p className="register-sub">
@@ -78,15 +79,27 @@ export default function Register() {
             </select>
           </div>
 
-          <div className="form-group">
-            <label>Full Name</label>
-            <input 
-              className="form-control" 
-              type="text"
-              value={fullName} 
-              onChange={(e) => setFullName(e.target.value)} 
-              placeholder="Full Name" 
-            />
+          <div className="two-col">
+            <div className="form-group">
+              <label>First Name</label>
+              <input 
+                className="form-control" 
+                type="text"
+                value={firstName} 
+                onChange={(e) => setFirstName(e.target.value)} 
+                placeholder="First Name" 
+              />
+            </div>
+            <div className="form-group">
+              <label>Last Name</label>
+              <input 
+                className="form-control" 
+                type="text"
+                value={lastName} 
+                onChange={(e) => setLastName(e.target.value)} 
+                placeholder="Last Name" 
+              />
+            </div>
           </div>
 
           <div className="form-group">

@@ -38,7 +38,8 @@ The backend uses **SQLite** for the database - no additional setup required! The
 ```json
 {
   "role": "Homeowner",
-  "fullName": "John Doe",
+  "firstName": "John",
+  "lastName": "Doe",
   "phone": "0712345678",
   "location": "Nairobi",
   "estate": "Kilimani",
@@ -50,7 +51,8 @@ The backend uses **SQLite** for the database - no additional setup required! The
 ```json
 {
   "role": "Worker",
-  "fullName": "Jane Smith",
+  "firstName": "Jane",
+  "lastName": "Smith",
   "phone": "0723456789",
   "location": "Nairobi",
   "estate": "Westlands",
