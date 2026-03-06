@@ -68,6 +68,7 @@ async function initializeDatabase() {
           worker_id INTEGER,
           service TEXT,
           booking_date TEXT,
+          booking_time TEXT,
           notes TEXT,
           status TEXT DEFAULT 'pending',
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -75,6 +76,11 @@ async function initializeDatabase() {
           FOREIGN KEY (homeowner_id) REFERENCES users(id) ON DELETE CASCADE,
           FOREIGN KEY (worker_id) REFERENCES users(id) ON DELETE CASCADE
         )
+      `)
+
+      // Migrate: Add booking_time column if it doesn't exist
+      await pool.query(`
+        ALTER TABLE bookings ADD COLUMN IF NOT EXISTS booking_time TEXT
       `)
 
       console.log('✓ PostgreSQL tables initialized successfully')

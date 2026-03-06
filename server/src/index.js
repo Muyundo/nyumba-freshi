@@ -249,17 +249,21 @@ app.get('/api/workers/:id', async (req, res) => {
 
 // Create a booking
 app.post('/api/bookings', verifyTokenMiddleware, async (req, res) => {
-  const { workerId, service, bookingDate, notes } = req.body || {}
+  const { workerId, service, bookingDate, bookingTime, notes } = req.body || {}
   const homeownerId = req.user.userId
 
   if (!workerId || !service || !bookingDate) {
     return res.status(400).json({ error: 'workerId, service, and bookingDate are required' })
   }
 
+  if (!bookingTime) {
+    return res.status(400).json({ error: 'bookingTime is required' })
+  }
+
   try {
     const result = await db.query(
-      'INSERT INTO bookings (homeowner_id, worker_id, service, booking_date, notes, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-      [homeownerId, workerId, service, bookingDate, notes || '', 'pending']
+      'INSERT INTO bookings (homeowner_id, worker_id, service, booking_date, booking_time, notes, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+      [homeownerId, workerId, service, bookingDate, bookingTime, notes || '', 'pending']
     )
     
     res.status(201).json({
@@ -268,6 +272,7 @@ app.post('/api/bookings', verifyTokenMiddleware, async (req, res) => {
       workerId,
       service,
       bookingDate,
+      bookingTime,
       notes: notes || '',
       status: 'pending',
       createdAt: new Date().toISOString()
@@ -295,6 +300,7 @@ app.get('/api/homeowners/:homeownerId/bookings', verifyTokenMiddleware, async (r
         b.worker_id,
         b.service,
         b.booking_date,
+        b.booking_time,
         b.notes,
         b.status,
         b.created_at,
@@ -313,6 +319,7 @@ app.get('/api/homeowners/:homeownerId/bookings', verifyTokenMiddleware, async (r
       workerId: b.worker_id,
       service: b.service,
       bookingDate: b.booking_date,
+      bookingTime: b.booking_time,
       notes: b.notes,
       status: b.status,
       createdAt: b.created_at,
@@ -344,6 +351,7 @@ app.get('/api/workers/:workerId/bookings', verifyTokenMiddleware, async (req, re
         b.worker_id,
         b.service,
         b.booking_date,
+        b.booking_time,
         b.notes,
         b.status,
         b.created_at,
@@ -362,6 +370,7 @@ app.get('/api/workers/:workerId/bookings', verifyTokenMiddleware, async (req, re
       workerId: b.worker_id,
       service: b.service,
       bookingDate: b.booking_date,
+      bookingTime: b.booking_time,
       notes: b.notes,
       status: b.status,
       createdAt: b.created_at,
