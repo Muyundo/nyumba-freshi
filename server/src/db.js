@@ -38,6 +38,32 @@ async function initializeDatabase() {
         )
       `)
 
+      // Ensure name columns exist on older databases created with full_name only.
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT')
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name TEXT')
+
+      const fullNameColumnCheck = await pool.query(`
+        SELECT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_name = 'users' AND column_name = 'full_name'
+        ) AS has_full_name
+      `)
+
+      if (fullNameColumnCheck.rows[0].has_full_name) {
+        await pool.query(`
+          UPDATE users
+          SET
+            first_name = COALESCE(NULLIF(first_name, ''), split_part(trim(full_name), ' ', 1)),
+            last_name = COALESCE(
+              NULLIF(last_name, ''),
+              NULLIF(trim(substring(trim(full_name) FROM '^\\S+\\s*(.*)$')), '')
+            )
+          WHERE full_name IS NOT NULL AND trim(full_name) <> ''
+        `)
+        console.log('✓ Name columns synced from full_name where needed')
+      }
+
       // Create worker_profiles table
       await pool.query(`
         CREATE TABLE IF NOT EXISTS worker_profiles (
