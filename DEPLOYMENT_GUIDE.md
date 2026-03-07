@@ -6,7 +6,7 @@ This guide walks through deploying Nyumba Freshi to Railway with automatic data 
 
 - GitHub account with your code pushed to `Muyundo/nyumba-freshi`
 - Railway account (sign up at https://railway.app)
-- Everything is already configured locally ✅
+- Everything is already configured locally
 
 ---
 
@@ -18,7 +18,7 @@ This guide walks through deploying Nyumba Freshi to Railway with automatic data 
 2. Click **"Create New Project"**
 3. Select **"GitHub Repo"**
 4. Select your repository: `Muyundo/nyumba-freshi`
-5. Railway will auto-detect it's a Node.js project ✅
+5. Railway will auto-detect it's a Node.js project
 
 ### 1.2 Configure Backend Service
 
@@ -26,7 +26,7 @@ This guide walks through deploying Nyumba Freshi to Railway with automatic data 
 2. Click on your Node project
 3. Go to **"Settings"** tab
 4. Under **"Root Directory"**, set to: `server`
-5. Railway will auto-detect `package.json` and build command ✅
+5. Railway will auto-detect `package.json` and build command
 
 ### 1.3 Add PostgreSQL Database
 
@@ -35,7 +35,7 @@ This guide walks through deploying Nyumba Freshi to Railway with automatic data 
 3. Railway will:
    - Create a PostgreSQL database
    - Automatically add `DATABASE_URL` environment variable
-   - Connect it to your backend service ✅
+   - Connect it to your backend service
 
 **Important**: This happens automatically - no manual configuration needed!
 
@@ -53,7 +53,7 @@ You should see:
 {"status":"ok","time":"..."}
 ```
 
-✅ Backend is ready!
+Backend is ready.
 
 ---
 
@@ -69,7 +69,7 @@ You should see:
 
 1. Click **"Add New..."** → **"Project"**
 2. Find and select: `Muyundo/nyumba-freshi`
-3. Vercel auto-detects Vite configuration ✅
+3. Vercel auto-detects Vite configuration
 
 ### 2.3 Configure Frontend
 
@@ -89,7 +89,7 @@ You should see:
 ### 2.5 Deploy
 
 1. Click **"Deploy"**
-2. Vercel builds and deploys automatically ✅
+2. Vercel builds and deploys automatically
 
 ---
 
@@ -124,7 +124,7 @@ async function initializeDatabase() {
 }
 ```
 
-So tables are created automatically! ✅
+So tables are created automatically.
 
 ---
 
@@ -145,7 +145,7 @@ https://your-railway-url/api/health
 Open your Vercel frontend URL in browser - it should:
 1. Load the app
 2. Connect to your backend automatically
-3. Display the worker list from your PostgreSQL database ✅
+3. Display the worker list from your PostgreSQL database
 
 ---
 
@@ -172,7 +172,7 @@ Open your Vercel frontend URL in browser - it should:
 
 ### Problem: Data not persisting
 
-PostgreSQL data is persistent by default on Railway! ✅
+PostgreSQL data is persistent by default on Railway.
 
 If you lose data, you might have:
 - Accidentally deleted PostgreSQL service
@@ -201,7 +201,7 @@ npm run dev
 
 1. Make changes locally
 2. Test on `npm run dev`
-3. Push to GitHub → Auto-deploy to Railway & Vercel ✅
+3. Push to GitHub -> Auto-deploy to Railway & Vercel
 
 ---
 
@@ -220,9 +220,9 @@ psql postgresql://postgres:postgres123@localhost:5432/nyumba_freshi
 ### Railway PostgreSQL is Always Backed Up
 
 Railway automatically:
-- ✅ Backs up your database
-- ✅ Keeps data even after redeploys
-- ✅ Handles recovery if needed
+- Backs up your database
+- Keeps data even after redeploys
+- Handles recovery if needed
 
 ---
 
@@ -230,11 +230,11 @@ Railway automatically:
 
 | Component | Host | Auto-Deploy | Data Persistent |
 |-----------|------|-------------|-----------------|
-| Backend | Railway | Yes (GitHub) | ✅ Yes (PostgreSQL) |
+| Backend | Railway | Yes (GitHub) | Yes (PostgreSQL) |
 | Frontend | Vercel | Yes (GitHub) | N/A |
-| Database | Railway PostgreSQL | - | ✅ Yes |
+| Database | Railway PostgreSQL | - | Yes |
 
-Everything is configured to work seamlessly! 🚀
+Everything is configured to work seamlessly.
 
 ---
 
@@ -246,4 +246,4 @@ If something goes wrong during deployment:
 3. Verify environment variables are set correctly
 4. Make sure GitHub repo is up to date with latest code
 
-Good luck! 🎯
+Good luck!

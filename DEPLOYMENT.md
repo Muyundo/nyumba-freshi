@@ -141,12 +141,12 @@ After making this change, commit and push to GitHub - Railway will auto-deploy!
 Both platforms are already configured for automatic deployments:
 
 ### Railway (Backend)
-- ✅ Every push to `main` branch automatically deploys
+- Every push to `main` branch automatically deploys
 - View deployment logs in Railway dashboard
 - Deployment typically takes 2-3 minutes
 
 ### Vercel (Frontend)
-- ✅ Every push to `main` branch automatically deploys
+- Every push to `main` branch automatically deploys
 - Vercel also creates preview deployments for pull requests
 - Deployment typically takes 1-2 minutes
 
@@ -195,22 +195,22 @@ JWT_EXPIRES_IN=1h
 ### Common Issues
 
 #### 1. Frontend can't connect to backend
-- ✅ Check VITE_API_BASE is set correctly in Vercel
-- ✅ Check CORS is configured in backend
-- ✅ Verify backend is running: visit `/api/health`
+- Check VITE_API_BASE is set correctly in Vercel
+- Check CORS is configured in backend
+- Verify backend is running: visit `/api/health`
 
 #### 2. JWT errors
-- ✅ Ensure JWT_SECRET is set and matches between deployments
-- ✅ Use openssl to generate a strong secret
+- Ensure JWT_SECRET is set and matches between deployments
+- Use openssl to generate a strong secret
 
 #### 3. Database not persisting
-- ✅ Verify Railway volume is mounted at `/app/server`
-- ✅ Check database file path in `server/src/db.js`
+- Verify Railway volume is mounted at `/app/server`
+- Check database file path in `server/src/db.js`
 
 #### 4. Build failures
-- ✅ Check build logs in platform dashboard
-- ✅ Ensure `package.json` has all dependencies
-- ✅ Test build locally: `npm run build`
+- Check build logs in platform dashboard
+- Ensure `package.json` has all dependencies
+- Test build locally: `npm run build`
 
 ---
 
@@ -233,13 +233,13 @@ JWT_EXPIRES_IN=1h
 ### Free Tier Limits
 
 **Vercel (Frontend)**
-- ✅ Free forever for personal projects
+- Free forever for personal projects
 - 100GB bandwidth/month
 - Unlimited deployments
 - Automatic HTTPS
 
 **Railway (Backend)**
-- 💰 $5 free credits/month
+- $5 free credits/month
 - Estimated usage for small app: ~$5-10/month
 - First $5 covered by free credits
 - Usage-based pricing after credits
@@ -250,10 +250,10 @@ JWT_EXPIRES_IN=1h
 
 ## Next Steps
 
-1. ✅ Monitor first deployments
-2. ✅ Test all features in production
-3. ✅ Set up custom domain (optional)
-4. ✅ Share your live app!
+1. Monitor first deployments
+2. Test all features in production
+3. Set up custom domain (optional)
+4. Share your live app!
 
 ## Support Resources
 
@@ -267,4 +267,4 @@ JWT_EXPIRES_IN=1h
 - Frontend: `https://nyumba-freshi.vercel.app` (update with actual URL)
 - Backend: `https://your-app.railway.app` (update with actual URL)
 
-Congratulations! Your app is now live! 🎉
+Congratulations! Your app is now live!

@@ -1,6 +1,6 @@
 # Pre-Deployment Checklist
 
-## ✅ Local Testing (Complete These First)
+## Local Testing (Complete These First)
 
 - [ ] Backend runs without errors: `npm run dev` in `server/`
 - [ ] Frontend runs without errors: `npm run dev` in `frontend/`
@@ -10,7 +10,7 @@
 - [ ] Can create booking
 - [ ] Backend (/api/health) returns: `{"status":"ok","time":"..."}`
 
-## ✅ Code Preparation
+## Code Preparation
 
 - [ ] All changes committed to GitHub
 - [ ] No uncommitted changes in working directory
@@ -25,7 +25,7 @@ git status
 - [ ] `.env.example` exists for reference
 - [ ] No hardcoded URLs or credentials in code
 
-## ✅ Railway Backend Setup
+## Railway Backend Setup
 
 - [ ] Railway account created
 - [ ] GitHub repository connected
@@ -37,7 +37,7 @@ git status
 
 Test URL: `https://your-railway-backend-url/api/health`
 
-## ✅ Vercel Frontend Setup
+## Vercel Frontend Setup
 
 - [ ] Vercel account created
 - [ ] GitHub repository connected
@@ -47,7 +47,7 @@ Test URL: `https://your-railway-backend-url/api/health`
 - [ ] Frontend deployed successfully
 - [ ] Frontend loads in browser
 
-## ✅ Integration Testing
+## Integration Testing
 
 After both are deployed:
 
@@ -57,16 +57,16 @@ After both are deployed:
 - [ ] Bookings load correctly
 - [ ] API calls succeed
 
-## ⚠️ Common Mistakes to Avoid
+## Common Mistakes to Avoid
 
-- ❌ NOT including `server/` root directory in Railway
-- ❌ NOT including `frontend/` root directory in Vercel  
-- ❌ Forgetting to set `VITE_API_BASE` environment variable
-- ❌ Using `http://` instead of `https://` in URLs
-- ❌ Forgetting to add PostgreSQL database to Railway project
-- ❌ Committing `.env` file with credentials to Git
+- NOT including `server/` root directory in Railway
+- NOT including `frontend/` root directory in Vercel  
+- Forgetting to set `VITE_API_BASE` environment variable
+- Using `http://` instead of `https://` in URLs
+- Forgetting to add PostgreSQL database to Railway project
+- Committing `.env` file with credentials to Git
 
-## 🆘 If Something Goes Wrong
+## If Something Goes Wrong
 
 1. Check backend logs in Railway (Service → Logs tab)
 2. Check frontend build logs in Vercel (Deployments tab)
@@ -74,15 +74,15 @@ After both are deployed:
 4. Verify GitHub is up to date with your code
 5. Restart services on Railway if needed
 
-## ✨ Deployment Order
+## Deployment Order
 
-1. ✅ Test everything locally
-2. ✅ Commit all code to GitHub (`git push`)
-3. ✅ Deploy backend to Railway
-4. ✅ Add PostgreSQL to Railway
-5. ✅ Get Railway backend URL
-6. ✅ Deploy frontend to Vercel
-7. ✅ Set `VITE_API_BASE` on Vercel
-8. ✅ Test live application
+1. Test everything locally
+2. Commit all code to GitHub (`git push`)
+3. Deploy backend to Railway
+4. Add PostgreSQL to Railway
+5. Get Railway backend URL
+6. Deploy frontend to Vercel
+7. Set `VITE_API_BASE` on Vercel
+8. Test live application
 
-Ready to deploy? 🚀
+Ready to deploy?
