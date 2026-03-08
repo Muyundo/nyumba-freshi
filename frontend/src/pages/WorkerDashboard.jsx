@@ -12,6 +12,123 @@ function formatTime24to12(time24) {
   return `${hour12}:${minutes} ${ampm}`
 }
 
+function ChangePasswordModal({ isOpen, onClose }) {
+  const [oldPassword, setOldPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  const resetForm = () => {
+    setOldPassword('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setError('')
+    setSuccess('')
+  }
+
+  const handleClose = () => {
+    if (isSubmitting) return
+    resetForm()
+    onClose()
+  }
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    setError('')
+    setSuccess('')
+
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      setError('All fields are required')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('New password and confirm password do not match')
+      return
+    }
+
+    if (newPassword.length < 6) {
+      setError('New password must be at least 6 characters long')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      await api.changePassword(oldPassword, newPassword)
+      setSuccess('Password changed successfully')
+      setOldPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+    } catch (err) {
+      const message = String(err?.message || '')
+      if (message.includes('Current password is incorrect')) {
+        setError('Current password is incorrect')
+      } else {
+        setError('Failed to change password. Please try again.')
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  if (!isOpen) {
+    return null
+  }
+
+  return (
+    <div className="worker-modal-overlay" onClick={handleClose}>
+      <div className="worker-modal" onClick={(event) => event.stopPropagation()}>
+        <div className="worker-modal-header">
+          <h3>Change Password</h3>
+          <button className="worker-modal-close" onClick={handleClose} type="button">✕</button>
+        </div>
+        <form className="worker-password-form" onSubmit={handleSubmit}>
+          {error && <div className="worker-form-error">{error}</div>}
+          {success && <div className="worker-form-success">{success}</div>}
+
+          <label htmlFor="worker-old-password">Current Password</label>
+          <input
+            id="worker-old-password"
+            type="password"
+            value={oldPassword}
+            onChange={(event) => setOldPassword(event.target.value)}
+            disabled={isSubmitting}
+          />
+
+          <label htmlFor="worker-new-password">New Password</label>
+          <input
+            id="worker-new-password"
+            type="password"
+            value={newPassword}
+            onChange={(event) => setNewPassword(event.target.value)}
+            disabled={isSubmitting}
+          />
+
+          <label htmlFor="worker-confirm-password">Confirm New Password</label>
+          <input
+            id="worker-confirm-password"
+            type="password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            disabled={isSubmitting}
+          />
+
+          <div className="worker-password-actions">
+            <button className="worker-btn-secondary" type="button" onClick={handleClose} disabled={isSubmitting}>
+              Cancel
+            </button>
+            <button className="worker-btn-primary" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Updating...' : 'Update Password'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function WorkerDashboard() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('requests')
@@ -19,6 +136,7 @@ export default function WorkerDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [processingId, setProcessingId] = useState(null)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
 
   const userData = localStorage.getItem('currentUser')
   let currentUser = null
@@ -172,6 +290,9 @@ export default function WorkerDashboard() {
             <span className="avatar">👤</span>
             <span className="user-name">{displayName}</span>
           </div>
+          <button className="btn-change-password" onClick={() => setShowPasswordModal(true)}>
+            Change Password
+          </button>
           <button className="btn-logout" onClick={handleLogout}>
             Logout
           </button>
@@ -332,6 +453,11 @@ export default function WorkerDashboard() {
           </section>
         )}
       </main>
+
+      <ChangePasswordModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+      />
     </div>
   )
 }
