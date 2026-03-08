@@ -12,6 +12,125 @@ function formatTime24to12(time24) {
   return `${hour12}:${minutes} ${ampm}`
 }
 
+function ChangePasswordModal({ isOpen, onClose, onSuccess }) {
+  const [oldPassword, setOldPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      setError('All fields are required')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('New passwords do not match')
+      return
+    }
+
+    if (newPassword.length < 6) {
+      setError('New password must be at least 6 characters long')
+      return
+    }
+
+    setLoading(true)
+    try {
+      await api.changePassword(oldPassword, newPassword)
+      setSuccess('Password changed successfully!')
+      setOldPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      setTimeout(() => {
+        onSuccess?.()
+        onClose()
+      }, 1500)
+    } catch (err) {
+      setError(err.message || 'Failed to change password. Please check your old password.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Change Password</h2>
+          <button className="close-btn" onClick={onClose}>✕</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="change-password-form">
+          {error && <div className="form-error">{error}</div>}
+          {success && <div className="form-success">{success}</div>}
+
+          <div className="form-group">
+            <label htmlFor="oldPassword">Current Password</label>
+            <input
+              id="oldPassword"
+              type="password"
+              value={oldPassword}
+              onChange={(e) => setOldPassword(e.target.value)}
+              placeholder="Enter your current password"
+              disabled={loading}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="newPassword">New Password</label>
+            <input
+              id="newPassword"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Enter new password (min 6 characters)"
+              disabled={loading}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="confirmPassword">Confirm New Password</label>
+            <input
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm new password"
+              disabled={loading}
+            />
+          </div>
+
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn-cancel"
+              onClick={onClose}
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn-submit"
+              disabled={loading}
+            >
+              {loading ? 'Changing...' : 'Change Password'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('home')
@@ -19,6 +138,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
 
   const userData = localStorage.getItem('currentUser')
   let currentUser = null
@@ -137,7 +257,13 @@ export default function Dashboard() {
             <span className="dropdown-arrow">▼</span>
             {showProfileMenu && (
               <div className="profile-menu">
-                <button onClick={handleLogout} className="menu-item">
+                <button onClick={() => {
+                  setShowPasswordModal(true)
+                  setShowProfileMenu(false)
+                }} className="menu-item">
+                  🔒 Change Password
+                </button>
+                <button onClick={handleLogout} className="menu-item logout-item">
                   Logout
                 </button>
               </div>
@@ -290,6 +416,13 @@ export default function Dashboard() {
           </>
         )}
       </main>
+
+      <ChangePasswordModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        onSuccess={() => setShowProfileMenu(false)}
+      />
     </div>
   )
 }
+

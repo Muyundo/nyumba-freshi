@@ -418,6 +418,54 @@ app.patch('/api/bookings/:bookingId', verifyTokenMiddleware, async (req, res) =>
   }
 })
 
+// Change password endpoint (protected)
+app.post('/api/change-password', verifyTokenMiddleware, async (req, res) => {
+  const { oldPassword, newPassword } = req.body || {}
+  const userId = req.user.userId
+
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ error: 'oldPassword and newPassword are required' })
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: 'New password must be at least 6 characters long' })
+  }
+
+  try {
+    // Get current user password hash
+    const result = await db.query(
+      'SELECT password_hash FROM users WHERE id = $1',
+      [userId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' })
+    }
+
+    const currentPasswordHash = result.rows[0].password_hash
+
+    // Verify old password
+    const isMatch = await bcrypt.compare(oldPassword, currentPasswordHash)
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Current password is incorrect' })
+    }
+
+    // Hash new password
+    const newPasswordHash = await bcrypt.hash(newPassword, 10)
+
+    // Update password
+    await db.query(
+      'UPDATE users SET password_hash = $1 WHERE id = $2',
+      [newPasswordHash, userId]
+    )
+
+    res.json({ message: 'Password changed successfully' })
+  } catch (err) {
+    console.error('Change password error', err)
+    res.status(500).json({ error: 'Failed to change password' })
+  }
+})
+
 app.listen(port, host, () => {
   console.log(`Nyumba Freshi backend running on http://${host}:${port}`)
 })

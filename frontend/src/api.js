@@ -95,6 +95,14 @@ export function updateBookingStatus(bookingId, status) {
   })
 }
 
+export function changePassword(oldPassword, newPassword) {
+  return request('/api/change-password', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ oldPassword, newPassword }),
+  })
+}
+
 export default {
   getHello,
   login,
@@ -105,4 +113,5 @@ export default {
   getWorkerBookings,
   getHomeownerBookings,
   updateBookingStatus,
+  changePassword,
 }
