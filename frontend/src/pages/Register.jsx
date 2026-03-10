@@ -3,6 +3,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import api from '../api'
 import './Register.css'
 
+function normalizePhone(value) {
+  return String(value || '').replace(/\D/g, '')
+}
+
+function isValidHomeownerPhone(value) {
+  return /^07\d{8}$/.test(normalizePhone(value))
+}
+
 export default function Register() {
   const [role, setRole] = useState('Homeowner')
   const [firstName, setFirstName] = useState('')
@@ -19,6 +27,21 @@ export default function Register() {
   const [messageType, setMessageType] = useState('error')
   const navigate = useNavigate()
 
+  const handleRoleChange = (nextRole) => {
+    setRole(nextRole)
+    if (nextRole === 'Homeowner') {
+      setPhone((prev) => normalizePhone(prev).slice(0, 10))
+    }
+  }
+
+  const handlePhoneChange = (value) => {
+    if (role === 'Homeowner') {
+      setPhone(normalizePhone(value).slice(0, 10))
+      return
+    }
+    setPhone(value)
+  }
+
   const submit = async (e) => {
     e.preventDefault()
     setMessage(null)
@@ -29,6 +52,12 @@ export default function Register() {
     }
     if (password !== confirm) {
       setMessage('Passwords do not match')
+      setMessageType('error')
+      return
+    }
+
+    if (role === 'Homeowner' && !isValidHomeownerPhone(phone)) {
+      setMessage('Invalid phone number. Use exactly 10 digits starting with 07.')
       setMessageType('error')
       return
     }
@@ -73,7 +102,7 @@ export default function Register() {
         <form className="register-form" onSubmit={submit}>
           <div className="form-group">
             <label>Register as</label>
-            <select className="form-control" value={role} onChange={(e) => setRole(e.target.value)}>
+            <select className="form-control" value={role} onChange={(e) => handleRoleChange(e.target.value)}>
               <option value="Homeowner">Homeowner</option>
               <option value="Worker">Worker</option>
             </select>
@@ -108,8 +137,10 @@ export default function Register() {
               className="form-control" 
               type="tel"
               value={phone} 
-              onChange={(e) => setPhone(e.target.value)} 
-              placeholder="0712 345 678" 
+              onChange={(e) => handlePhoneChange(e.target.value)}
+              placeholder={role === 'Homeowner' ? '07XXXXXXXX' : '0712 345 678'}
+              maxLength={role === 'Homeowner' ? 10 : undefined}
+              inputMode={role === 'Homeowner' ? 'numeric' : undefined}
             />
           </div>
 
