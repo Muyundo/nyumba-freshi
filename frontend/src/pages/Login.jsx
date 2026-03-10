@@ -3,6 +3,14 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import api from '../api'
 import './Login.css'
 
+function normalizePhone(value) {
+  return String(value || '').replace(/\D/g, '')
+}
+
+function isValidPhone(value) {
+  return /^07\d{8}$/.test(normalizePhone(value))
+}
+
 export default function Login() {
   const [role, setRole] = useState('Homeowner')
   const [phone, setPhone] = useState('')
@@ -15,7 +23,7 @@ export default function Login() {
   useEffect(() => {
     const state = location.state || {}
     if (state.role) setRole(state.role)
-    if (state.phone) setPhone(state.phone)
+    if (state.phone) setPhone(normalizePhone(state.phone).slice(0, 10))
     if (state.fromRegister) {
       setMessage('Registration successful. Please log in.')
       setMessageType('success')
@@ -27,6 +35,12 @@ export default function Login() {
     setMessage(null)
     if (!phone || !password) {
       setMessage('Please enter phone number and password')
+      setMessageType('error')
+      return
+    }
+
+    if (!isValidPhone(phone)) {
+      setMessage('Invalid phone number. Use exactly 10 digits starting with 07.')
       setMessageType('error')
       return
     }
@@ -70,8 +84,10 @@ export default function Login() {
               className="form-control"
               type="tel"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="0712 345 678"
+              onChange={(e) => setPhone(normalizePhone(e.target.value).slice(0, 10))}
+              placeholder="07XXXXXXXX"
+              maxLength={10}
+              inputMode="numeric"
             />
           </div>
 

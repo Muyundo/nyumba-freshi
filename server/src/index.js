@@ -52,6 +52,10 @@ app.post('/api/login', async (req, res) => {
 
   try {
     const normalizedPhone = normalizePhone(phone)
+    if (!isValidPhone(normalizedPhone)) {
+      return res.status(400).json({ error: 'Phone must be 10 digits and start with 07' })
+    }
+
     const result = await db.query(
       'SELECT id, role, first_name, last_name, phone, password_hash FROM users WHERE role = $1 AND phone = $2 LIMIT 1',
       [role, normalizedPhone]
