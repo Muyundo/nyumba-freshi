@@ -7,7 +7,7 @@ function normalizePhone(value) {
   return String(value || '').replace(/\D/g, '')
 }
 
-function isValidHomeownerPhone(value) {
+function isValidPhone(value) {
   return /^07\d{8}$/.test(normalizePhone(value))
 }
 
@@ -29,17 +29,11 @@ export default function Register() {
 
   const handleRoleChange = (nextRole) => {
     setRole(nextRole)
-    if (nextRole === 'Homeowner') {
-      setPhone((prev) => normalizePhone(prev).slice(0, 10))
-    }
+    setPhone((prev) => normalizePhone(prev).slice(0, 10))
   }
 
   const handlePhoneChange = (value) => {
-    if (role === 'Homeowner') {
-      setPhone(normalizePhone(value).slice(0, 10))
-      return
-    }
-    setPhone(value)
+    setPhone(normalizePhone(value).slice(0, 10))
   }
 
   const submit = async (e) => {
@@ -56,7 +50,7 @@ export default function Register() {
       return
     }
 
-    if (role === 'Homeowner' && !isValidHomeownerPhone(phone)) {
+    if (!isValidPhone(phone)) {
       setMessage('Invalid phone number. Use exactly 10 digits starting with 07.')
       setMessageType('error')
       return
@@ -138,9 +132,9 @@ export default function Register() {
               type="tel"
               value={phone} 
               onChange={(e) => handlePhoneChange(e.target.value)}
-              placeholder={role === 'Homeowner' ? '07XXXXXXXX' : '0712 345 678'}
-              maxLength={role === 'Homeowner' ? 10 : undefined}
-              inputMode={role === 'Homeowner' ? 'numeric' : undefined}
+              placeholder="07XXXXXXXX"
+              maxLength={10}
+              inputMode="numeric"
             />
           </div>
 

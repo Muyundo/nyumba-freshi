@@ -16,7 +16,7 @@ function normalizePhone(phone) {
   return String(phone || '').replace(/\D/g, '')
 }
 
-function isValidHomeownerPhone(phone) {
+function isValidPhone(phone) {
   return /^07\d{8}$/.test(normalizePhone(phone))
 }
 
@@ -95,8 +95,8 @@ app.post('/api/register', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10)
     const normalizedPhone = normalizePhone(phone)
 
-    if (role === 'Homeowner' && !isValidHomeownerPhone(normalizedPhone)) {
-      return res.status(400).json({ error: 'Homeowner phone must be 10 digits and start with 07' })
+    if (!isValidPhone(normalizedPhone)) {
+      return res.status(400).json({ error: 'Phone must be 10 digits and start with 07' })
     }
 
     const existingUserResult = await db.query(
