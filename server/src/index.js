@@ -17,7 +17,7 @@ function normalizePhone(phone) {
 }
 
 function isValidPhone(phone) {
-  return /^07\d{8}$/.test(normalizePhone(phone))
+  return /^(07|01)\d{8}$/.test(normalizePhone(phone))
 }
 
 function normalizeIdNumber(value) {
@@ -53,7 +53,7 @@ app.post('/api/login', async (req, res) => {
   try {
     const normalizedPhone = normalizePhone(phone)
     if (!isValidPhone(normalizedPhone)) {
-      return res.status(400).json({ error: 'Phone must be 10 digits and start with 07' })
+      return res.status(400).json({ error: 'Phone must be 10 digits and start with 07 or 01' })
     }
 
     const result = await db.query(
@@ -108,7 +108,7 @@ app.post('/api/register', async (req, res) => {
     const normalizedPhone = normalizePhone(phone)
 
     if (!isValidPhone(normalizedPhone)) {
-      return res.status(400).json({ error: 'Phone must be 10 digits and start with 07' })
+      return res.status(400).json({ error: 'Phone must be 10 digits and start with 07 or 01' })
     }
 
     const existingUserResult = await db.query(

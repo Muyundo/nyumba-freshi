@@ -8,7 +8,7 @@ function normalizePhone(value) {
 }
 
 function isValidPhone(value) {
-  return /^07\d{8}$/.test(normalizePhone(value))
+  return /^(07|01)\d{8}$/.test(normalizePhone(value))
 }
 
 export default function Login() {
@@ -40,7 +40,7 @@ export default function Login() {
     }
 
     if (!isValidPhone(phone)) {
-      setMessage('Invalid phone number. Use exactly 10 digits starting with 07.')
+      setMessage('Invalid phone number. Use exactly 10 digits starting with 07 or 01.')
       setMessageType('error')
       return
     }
@@ -85,7 +85,7 @@ export default function Login() {
               type="tel"
               value={phone}
               onChange={(e) => setPhone(normalizePhone(e.target.value).slice(0, 10))}
-              placeholder="07XXXXXXXX"
+              placeholder="07XXXXXXXX or 01XXXXXXXX"
               maxLength={10}
               inputMode="numeric"
             />

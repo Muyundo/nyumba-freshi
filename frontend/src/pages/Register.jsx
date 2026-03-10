@@ -8,7 +8,7 @@ function normalizePhone(value) {
 }
 
 function isValidPhone(value) {
-  return /^07\d{8}$/.test(normalizePhone(value))
+  return /^(07|01)\d{8}$/.test(normalizePhone(value))
 }
 
 function normalizeIdNumber(value) {
@@ -63,7 +63,7 @@ export default function Register() {
     }
 
     if (!isValidPhone(phone)) {
-      setMessage('Invalid phone number. Use exactly 10 digits starting with 07.')
+      setMessage('Invalid phone number. Use exactly 10 digits starting with 07 or 01.')
       setMessageType('error')
       return
     }
@@ -150,7 +150,7 @@ export default function Register() {
               type="tel"
               value={phone} 
               onChange={(e) => handlePhoneChange(e.target.value)}
-              placeholder="07XXXXXXXX"
+              placeholder="07XXXXXXXX or 01XXXXXXXX"
               maxLength={10}
               inputMode="numeric"
             />
