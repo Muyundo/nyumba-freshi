@@ -3,6 +3,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import api from '../api'
 import './Register.css'
 
+const ESTATES_BY_LOCATION = {
+  Kitengela: ['Chuna', 'Milimani', 'Acacia'],
+  Mlolongo: ['Greenville', 'Waybridge Gardens', 'Valley View Park'],
+}
+
+const HOMEOWNER_LOCATIONS = Object.keys(ESTATES_BY_LOCATION)
+
 function normalizePhone(value) {
   return String(value || '').replace(/\D/g, '')
 }
@@ -38,6 +45,16 @@ export default function Register() {
   const handleRoleChange = (nextRole) => {
     setRole(nextRole)
     setPhone((prev) => normalizePhone(prev).slice(0, 10))
+
+    // Keep homeowner values constrained to dropdown options.
+    if (nextRole === 'Homeowner') {
+      if (!HOMEOWNER_LOCATIONS.includes(location)) {
+        setLocation('')
+        setEstate('')
+      } else if (!ESTATES_BY_LOCATION[location].includes(estate)) {
+        setEstate('')
+      }
+    }
   }
 
   const handlePhoneChange = (value) => {
@@ -46,6 +63,11 @@ export default function Register() {
 
   const handleIdNumberChange = (value) => {
     setIdNumber(normalizeIdNumber(value).slice(0, 9))
+  }
+
+  const handleHomeownerLocationChange = (nextLocation) => {
+    setLocation(nextLocation)
+    setEstate('')
   }
 
   const submit = async (e) => {
@@ -239,23 +261,54 @@ export default function Register() {
           <div className="two-col">
             <div className="form-group">
               <label>Location</label>
-              <input 
-                className="form-control" 
-                type="text"
-                value={location} 
-                onChange={(e) => setLocation(e.target.value)} 
-                placeholder="Estate / Area" 
-              />
+              {role === 'Homeowner' ? (
+                <select
+                  className="form-control"
+                  value={location}
+                  onChange={(e) => handleHomeownerLocationChange(e.target.value)}
+                >
+                  <option value="">Select location</option>
+                  {HOMEOWNER_LOCATIONS.map((locationOption) => (
+                    <option key={locationOption} value={locationOption}>
+                      {locationOption}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  className="form-control"
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Location"
+                />
+              )}
             </div>
             <div className="form-group">
               <label>Estate / Area</label>
-              <input 
-                className="form-control" 
-                type="text"
-                value={estate} 
-                onChange={(e) => setEstate(e.target.value)} 
-                placeholder="Estate / Area" 
-              />
+              {role === 'Homeowner' ? (
+                <select
+                  className="form-control"
+                  value={estate}
+                  onChange={(e) => setEstate(e.target.value)}
+                  disabled={!location}
+                >
+                  <option value="">Select estate</option>
+                  {(ESTATES_BY_LOCATION[location] || []).map((estateOption) => (
+                    <option key={estateOption} value={estateOption}>
+                      {estateOption}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  className="form-control"
+                  type="text"
+                  value={estate}
+                  onChange={(e) => setEstate(e.target.value)}
+                  placeholder="Estate / Area"
+                />
+              )}
             </div>
           </div>
 
