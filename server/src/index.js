@@ -20,6 +20,14 @@ function isValidPhone(phone) {
   return /^07\d{8}$/.test(normalizePhone(phone))
 }
 
+function normalizeIdNumber(value) {
+  return String(value || '').replace(/\D/g, '')
+}
+
+function isValidIdNumber(value) {
+  return /^\d{7,9}$/.test(normalizeIdNumber(value))
+}
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() })
 })
@@ -121,10 +129,15 @@ app.post('/api/register', async (req, res) => {
       const userId = userResult.rows[0].id
 
       if (role === 'Worker') {
+        const normalizedIdNumber = normalizeIdNumber(idNumber)
+        if (!isValidIdNumber(normalizedIdNumber)) {
+          return res.status(400).json({ error: 'Worker ID number must be digits only and between 7 and 9 numbers' })
+        }
+
         // Insert worker profile
         const profileResult = await client.query(
           'INSERT INTO worker_profiles (user_id, id_number, availability) VALUES ($1, $2, $3) RETURNING id',
-          [userId, idNumber || null, availability || null]
+          [userId, normalizedIdNumber, availability || null]
         )
         const profileId = profileResult.rows[0].id
 

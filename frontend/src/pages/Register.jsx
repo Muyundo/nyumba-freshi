@@ -11,6 +11,14 @@ function isValidPhone(value) {
   return /^07\d{8}$/.test(normalizePhone(value))
 }
 
+function normalizeIdNumber(value) {
+  return String(value || '').replace(/\D/g, '')
+}
+
+function isValidIdNumber(value) {
+  return /^\d{7,9}$/.test(normalizeIdNumber(value))
+}
+
 export default function Register() {
   const [role, setRole] = useState('Homeowner')
   const [firstName, setFirstName] = useState('')
@@ -36,6 +44,10 @@ export default function Register() {
     setPhone(normalizePhone(value).slice(0, 10))
   }
 
+  const handleIdNumberChange = (value) => {
+    setIdNumber(normalizeIdNumber(value).slice(0, 9))
+  }
+
   const submit = async (e) => {
     e.preventDefault()
     setMessage(null)
@@ -52,6 +64,12 @@ export default function Register() {
 
     if (!isValidPhone(phone)) {
       setMessage('Invalid phone number. Use exactly 10 digits starting with 07.')
+      setMessageType('error')
+      return
+    }
+
+    if (role === 'Worker' && !isValidIdNumber(idNumber)) {
+      setMessage('Invalid ID number. Use digits only, with 7 to 9 numbers.')
       setMessageType('error')
       return
     }
@@ -146,8 +164,10 @@ export default function Register() {
                   className="form-control" 
                   type="text"
                   value={idNumber} 
-                  onChange={(e) => setIdNumber(e.target.value)} 
-                  placeholder="ID Number" 
+                  onChange={(e) => handleIdNumberChange(e.target.value)}
+                  placeholder="ID Number"
+                  maxLength={9}
+                  inputMode="numeric"
                 />
               </div>
 
