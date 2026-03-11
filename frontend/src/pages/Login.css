@@ -150,6 +150,23 @@ select.form-control {
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
+.link-button {
+  background: transparent;
+  border: none;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.link-button:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
 .message {
   margin-top: 12px;
   padding: 12px 14px;
