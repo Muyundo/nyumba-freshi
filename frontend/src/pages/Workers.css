@@ -173,6 +173,12 @@
   color: #2563eb;
 }
 
+.worker-location {
+  font-size: 0.88rem;
+  color: #4b5563;
+  margin-bottom: 0.65rem;
+}
+
 .worker-services {
   font-size: 0.9rem;
   color: #6b7280;

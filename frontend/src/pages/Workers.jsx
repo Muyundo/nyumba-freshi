@@ -4,6 +4,13 @@ import api from '../api'
 import Header from '../components/Header'
 import './Workers.css'
 
+const ESTATES_BY_LOCATION = {
+  Kitengela: ['Chuna', 'Milimani', 'Acacia'],
+  Mlolongo: ['Greenville', 'Waybridge Gardens', 'Valley View Park'],
+}
+
+const HOMEOWNER_LOCATIONS = Object.keys(ESTATES_BY_LOCATION)
+
 function normalizeServiceKey(service) {
   const value = String(service || '').toLowerCase().trim()
   if (value.includes('clean')) return 'cleaning'
@@ -32,18 +39,41 @@ export default function Workers() {
   const [searchParams, setSearchParams] = useSearchParams()
   const rawService = searchParams.get('service') || 'all'
   const serviceFilter = normalizeServiceKey(rawService)
+  const rawLocation = searchParams.get('location') || 'all'
+  const locationFilter = HOMEOWNER_LOCATIONS.includes(rawLocation) ? rawLocation : 'all'
+  const rawEstate = searchParams.get('estate') || 'all'
+  const isKnownEstate = locationFilter !== 'all' && (ESTATES_BY_LOCATION[locationFilter] || []).includes(rawEstate)
+  const estateFilter = isKnownEstate ? rawEstate : 'all'
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [favorites, setFavorites] = useState(new Set())
 
+  const updateFilters = ({
+    service = serviceFilter,
+    location = locationFilter,
+    estate = estateFilter,
+  }) => {
+    const nextParams = {}
+    if (service !== 'all') nextParams.service = service
+    if (location !== 'all') nextParams.location = location
+    if (location !== 'all' && estate !== 'all') nextParams.estate = estate
+    setSearchParams(nextParams)
+  }
+
   const handleFilterChange = (event) => {
     const nextFilter = event.target.value
-    if (nextFilter === 'all') {
-      setSearchParams({})
-      return
-    }
-    setSearchParams({ service: nextFilter })
+    updateFilters({ service: nextFilter })
+  }
+
+  const handleLocationChange = (event) => {
+    const nextLocation = event.target.value
+    updateFilters({ location: nextLocation, estate: 'all' })
+  }
+
+  const handleEstateChange = (event) => {
+    const nextEstate = event.target.value
+    updateFilters({ estate: nextEstate })
   }
 
   const toggleFavorite = (workerId) => {
@@ -79,6 +109,20 @@ export default function Workers() {
             return workerServices.includes(normalizedFilter)
           })
         }
+
+        if (locationFilter !== 'all') {
+          const normalizedLocationFilter = String(locationFilter).toLowerCase().trim()
+          filteredWorkers = filteredWorkers.filter((w) =>
+            String(w.location || '').toLowerCase().trim() === normalizedLocationFilter
+          )
+        }
+
+        if (estateFilter !== 'all') {
+          const normalizedEstateFilter = String(estateFilter).toLowerCase().trim()
+          filteredWorkers = filteredWorkers.filter((w) =>
+            String(w.estate || '').toLowerCase().trim() === normalizedEstateFilter
+          )
+        }
         
         setList(filteredWorkers)
       } catch (err) {
@@ -90,7 +134,7 @@ export default function Workers() {
     }
 
     fetchWorkers()
-  }, [serviceFilter])
+  }, [serviceFilter, locationFilter, estateFilter])
 
   return (
     <div className="workers-page">
@@ -117,6 +161,41 @@ export default function Workers() {
             <option value="laundry">Laundry</option>
             <option value="both">Cleaning + Laundry</option>
           </select>
+
+          <label className="workers-filter-label" htmlFor="locationFilter">
+            Filter by location:
+          </label>
+          <select
+            id="locationFilter"
+            className="workers-filter-select"
+            value={locationFilter}
+            onChange={handleLocationChange}
+          >
+            <option value="all">All Locations</option>
+            {HOMEOWNER_LOCATIONS.map((locationOption) => (
+              <option key={locationOption} value={locationOption}>
+                {locationOption}
+              </option>
+            ))}
+          </select>
+
+          <label className="workers-filter-label" htmlFor="estateFilter">
+            Filter by estate:
+          </label>
+          <select
+            id="estateFilter"
+            className="workers-filter-select"
+            value={estateFilter}
+            onChange={handleEstateChange}
+            disabled={locationFilter === 'all'}
+          >
+            <option value="all">All Estates</option>
+            {(ESTATES_BY_LOCATION[locationFilter] || []).map((estateOption) => (
+              <option key={estateOption} value={estateOption}>
+                {estateOption}
+              </option>
+            ))}
+          </select>
         </div>
 
         {loading && <p className="loading-message">Loading workers...</p>}
@@ -124,7 +203,9 @@ export default function Workers() {
         
         {!loading && list.length === 0 && (
           <p className="empty-message">
-            {serviceFilter !== 'all' ? 'No workers found for this service.' : 'No workers available.'}
+            {serviceFilter !== 'all' || locationFilter !== 'all' || estateFilter !== 'all'
+              ? 'No workers found for the selected filters.'
+              : 'No workers available.'}
           </p>
         )}
         
@@ -147,6 +228,10 @@ export default function Workers() {
                   <Link to={`/workers/${w.id}`} className="worker-name">
                     {w.fullName}
                   </Link>
+
+                  <div className="worker-location">
+                    {[w.location, w.estate].filter(Boolean).join(' · ') || 'Location not specified'}
+                  </div>
                   
                   <div className="worker-services">
                     {w.services && w.services.length > 0 
