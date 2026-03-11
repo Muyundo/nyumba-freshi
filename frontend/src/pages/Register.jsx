@@ -4,8 +4,8 @@ import api from '../api'
 import './Register.css'
 
 const ESTATES_BY_LOCATION = {
-  Kitengela: ['Chuna', 'Milimani', 'Acacia'],
-  Mlolongo: ['Greenville', 'Waybridge Gardens', 'Valley View Park'],
+  Kitengela: ['Chuna', 'Milimani', 'Acacia', 'Riverine', 'Royal Gates', 'Fountain View', 'Almond Grove', 'Prestige'],
+  Mlolongo: ['Greenville', 'Valley View Park', 'Waybridge Gardens', 'Sucasa', 'Greenpark', 'Cactus', 'Jemparks'],
 }
 
 const HOMEOWNER_LOCATIONS = Object.keys(ESTATES_BY_LOCATION)
