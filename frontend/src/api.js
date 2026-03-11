@@ -22,17 +22,29 @@ function getAuthHeaders() {
 
 async function request(path, opts = {}) {
   const url = path.startsWith('http') ? path : `${BASE}${path}`
+  const headers = opts.headers || {}
+  const hasAuthHeader = Object.keys(headers).some((key) => key.toLowerCase() === 'authorization')
   const res = await fetch(url, opts)
   
   // Handle token expiration (401 Unauthorized)
-  if (res.status === 401) {
+  if (res.status === 401 && hasAuthHeader) {
     handleTokenExpired()
     throw new Error('Session expired. Please log in again.')
   }
   
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(`${res.status} ${res.statusText}: ${text}`)
+    let parsed = null
+    try {
+      parsed = JSON.parse(text)
+    } catch {
+      parsed = null
+    }
+
+    const error = new Error(parsed?.error || `${res.status} ${res.statusText}: ${text}`)
+    error.status = res.status
+    error.data = parsed
+    throw error
   }
   return res.json()
 }
@@ -46,6 +58,22 @@ export function login({ role, phone, password }) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ role, phone, password }),
+  })
+}
+
+export function verifyWorkerIdForPasswordReset(idNumber) {
+  return request('/api/workers/forgot-password/verify-id', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idNumber }),
+  })
+}
+
+export function resetWorkerPassword(resetToken, newPassword) {
+  return request('/api/workers/forgot-password/reset', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ resetToken, newPassword }),
   })
 }
 
@@ -106,6 +134,8 @@ export function changePassword(oldPassword, newPassword) {
 export default {
   getHello,
   login,
+  verifyWorkerIdForPasswordReset,
+  resetWorkerPassword,
   register,
   getWorkers,
   getWorker,
