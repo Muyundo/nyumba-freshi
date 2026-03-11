@@ -11,6 +11,14 @@ function signToken(payload) {
   return jwt.sign(payload, secret, { expiresIn })
 }
 
+function signPasswordResetToken(payload) {
+  return jwt.sign(payload, secret, { expiresIn: '15m' })
+}
+
+function verifyPasswordResetToken(token) {
+  return jwt.verify(token, secret)
+}
+
 function verifyTokenMiddleware(req, res, next) {
   const authHeader = req.headers.authorization || ''
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
@@ -24,4 +32,4 @@ function verifyTokenMiddleware(req, res, next) {
   }
 }
 
-module.exports = { signToken, verifyTokenMiddleware }
+module.exports = { signToken, signPasswordResetToken, verifyPasswordResetToken, verifyTokenMiddleware }

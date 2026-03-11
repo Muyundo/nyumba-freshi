@@ -3,11 +3,14 @@ const express = require('express')
 const cors = require('cors')
 const db = require('./db')
 const bcrypt = require('bcryptjs')
-const { signToken, verifyTokenMiddleware } = require('./auth')
+const { signToken, signPasswordResetToken, verifyPasswordResetToken, verifyTokenMiddleware } = require('./auth')
 
 const app = express()
 const port = process.env.PORT || 4000
 const host = process.env.HOST || '0.0.0.0'
+const MAX_FORGOT_PASSWORD_ATTEMPTS = 5
+const FORGOT_PASSWORD_LOCK_MS = 30 * 60 * 1000
+const forgotPasswordAttempts = new Map()
 
 app.use(cors())
 app.use(express.json())
@@ -26,6 +29,26 @@ function normalizeIdNumber(value) {
 
 function isValidIdNumber(value) {
   return /^\d{7,9}$/.test(normalizeIdNumber(value))
+}
+
+function getForgotPasswordAttemptKey(req) {
+  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim()
+  return forwarded || req.ip || 'unknown'
+}
+
+function getAttemptState(key) {
+  const now = Date.now()
+  const current = forgotPasswordAttempts.get(key)
+  if (!current) {
+    return { attempts: 0, lockedUntil: null }
+  }
+
+  if (current.lockedUntil && current.lockedUntil <= now) {
+    forgotPasswordAttempts.delete(key)
+    return { attempts: 0, lockedUntil: null }
+  }
+
+  return current
 }
 
 app.get('/api/health', (req, res) => {
@@ -83,6 +106,114 @@ app.post('/api/login', async (req, res) => {
   } catch (err) {
     console.error('Login error', err)
     return res.status(500).json({ error: 'Login error' })
+  }
+})
+
+app.post('/api/workers/forgot-password/verify-id', async (req, res) => {
+  const { idNumber } = req.body || {}
+  const attemptKey = getForgotPasswordAttemptKey(req)
+  const attemptState = getAttemptState(attemptKey)
+
+  if (attemptState.lockedUntil && attemptState.lockedUntil > Date.now()) {
+    return res.status(429).json({
+      error: 'Maximum verification attempts reached. Please contact the system administrator.',
+      attempts: MAX_FORGOT_PASSWORD_ATTEMPTS,
+      maxAttempts: MAX_FORGOT_PASSWORD_ATTEMPTS,
+      locked: true,
+    })
+  }
+
+  const normalizedIdNumber = normalizeIdNumber(idNumber)
+  if (!isValidIdNumber(normalizedIdNumber)) {
+    return res.status(400).json({ error: 'Worker ID number must be digits only and between 7 and 9 numbers' })
+  }
+
+  try {
+    const result = await db.query(
+      `SELECT u.id
+       FROM users u
+       INNER JOIN worker_profiles wp ON wp.user_id = u.id
+       WHERE u.role = 'Worker' AND wp.id_number = $1
+       LIMIT 1`,
+      [normalizedIdNumber]
+    )
+
+    const worker = result.rows[0]
+
+    if (!worker) {
+      const nextAttempts = attemptState.attempts + 1
+      const reachedMax = nextAttempts >= MAX_FORGOT_PASSWORD_ATTEMPTS
+
+      forgotPasswordAttempts.set(attemptKey, {
+        attempts: nextAttempts,
+        lockedUntil: reachedMax ? Date.now() + FORGOT_PASSWORD_LOCK_MS : null,
+      })
+
+      if (reachedMax) {
+        return res.status(429).json({
+          error: `Attempt ${nextAttempts} of ${MAX_FORGOT_PASSWORD_ATTEMPTS}. Maximum verification attempts reached. Please contact the system administrator.`,
+          attempts: nextAttempts,
+          maxAttempts: MAX_FORGOT_PASSWORD_ATTEMPTS,
+          locked: true,
+        })
+      }
+
+      return res.status(404).json({
+        error: `Your ID Number is incorrect, Please check and try again or Contact the system administrator. Attempt ${nextAttempts} of ${MAX_FORGOT_PASSWORD_ATTEMPTS}.`,
+        attempts: nextAttempts,
+        maxAttempts: MAX_FORGOT_PASSWORD_ATTEMPTS,
+        locked: false,
+      })
+    }
+
+    forgotPasswordAttempts.delete(attemptKey)
+
+    const resetToken = signPasswordResetToken({ userId: worker.id, role: 'Worker', action: 'password_reset' })
+    return res.json({ message: 'ID number verified', resetToken })
+  } catch (err) {
+    console.error('Verify worker ID for password reset error', err)
+    return res.status(500).json({ error: 'Failed to verify ID number' })
+  }
+})
+
+app.post('/api/workers/forgot-password/reset', async (req, res) => {
+  const { resetToken, newPassword } = req.body || {}
+
+  if (!resetToken || !newPassword) {
+    return res.status(400).json({ error: 'resetToken and newPassword are required' })
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: 'New password must be at least 6 characters long' })
+  }
+
+  try {
+    const decoded = verifyPasswordResetToken(resetToken)
+    if (!decoded || decoded.action !== 'password_reset' || decoded.role !== 'Worker') {
+      return res.status(401).json({ error: 'Invalid or expired reset token' })
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10)
+
+    const updateResult = await db.query(
+      'UPDATE users SET password_hash = $1 WHERE id = $2 AND role = $3 RETURNING id',
+      [passwordHash, decoded.userId, 'Worker']
+    )
+
+    if (updateResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Worker not found' })
+    }
+
+    return res.json({ message: 'Password reset successful. Please log in with your new password.' })
+  } catch (err) {
+    if (err && err.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Reset session expired. Please verify your ID number again.' })
+    }
+    if (err && err.name === 'JsonWebTokenError') {
+      return res.status(401).json({ error: 'Invalid or expired reset token' })
+    }
+    console.error('Reset worker password error', err)
+    return res.status(500).json({ error: 'Failed to reset password' })
   }
 })
 
