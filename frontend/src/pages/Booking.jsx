@@ -35,9 +35,30 @@ function getTodayDateString() {
 
 function getCurrentTimeString() {
   const now = new Date()
-  const hours = String(now.getHours()).padStart(2, '0')
-  const minutes = String(now.getMinutes()).padStart(2, '0')
-  return `${hours}:${minutes}`
+  const rounded = new Date(now)
+  rounded.setSeconds(0, 0)
+
+  if (rounded.getMinutes() > 0) {
+    rounded.setHours(rounded.getHours() + 1, 0, 0, 0)
+  }
+
+  const hours = String(rounded.getHours()).padStart(2, '0')
+  return `${hours}:00`
+}
+
+function timeToMinutes(value) {
+  const [hours, minutes] = String(value || '').split(':').map((part) => Number(part))
+  return (hours * 60) + minutes
+}
+
+function isWholeHourTime(value) {
+  return /^\d{2}:00$/.test(String(value || '').trim())
+}
+
+function hasOneHourConflict(selectedTime, existingTimes) {
+  if (!selectedTime) return false
+  const selectedMinutes = timeToMinutes(selectedTime)
+  return (existingTimes || []).some((existingTime) => Math.abs(selectedMinutes - timeToMinutes(existingTime)) < 60)
 }
 
 function isPastBookingDateTime(selectedDate, selectedTime) {
@@ -120,7 +141,7 @@ export default function Booking() {
   }, [workerId, date])
 
   const supportsBoth = availableServices.includes('cleaning') && availableServices.includes('laundry')
-  const isSelectedTimeBooked = Boolean(time && bookedTimes.includes(time))
+  const isSelectedTimeBooked = Boolean(time && hasOneHourConflict(time, bookedTimes))
 
   const showBookedTimesPopup = (times) => {
     const formatted = (times || []).map((t) => formatTime24to12(t)).join(', ')
@@ -154,6 +175,11 @@ export default function Booking() {
 
     if (!time) {
       setMessage('Please select a time')
+      return
+    }
+
+    if (!isWholeHourTime(time)) {
+      setMessage('Please book time in full hours e.g 7:00, 8:00')
       return
     }
 
@@ -267,6 +293,7 @@ export default function Booking() {
               type="time" 
               value={time} 
               min={minTime}
+              step={3600}
               onChange={(e) => setTime(e.target.value)} 
               required 
             />
@@ -275,7 +302,7 @@ export default function Booking() {
             {availabilityError && <p className="availability-error">{availabilityError}</p>}
             {!availabilityLoading && !availabilityError && date && bookedTimes.length > 0 && (
               <div className="booked-times-box">
-                <p className="booked-times-title">Already booked at:</p>
+                <p className="booked-times-title">Already booked at (each booking blocks 1 hour):</p>
                 <div className="booked-times-list">
                   {bookedTimes.map((bookedTime) => (
                     <span key={bookedTime} className="booked-time-chip">{formatTime24to12(bookedTime)}</span>

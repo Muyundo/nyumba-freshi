@@ -39,6 +39,23 @@ function isValidBookingTime(value) {
   return /^\d{2}:\d{2}$/.test(String(value || '').trim())
 }
 
+function isWholeHourBookingTime(value) {
+  return /^\d{2}:00$/.test(String(value || '').trim())
+}
+
+function timeToMinutes(value) {
+  const [hours, minutes] = String(value || '').split(':').map((part) => Number(part))
+  return (hours * 60) + minutes
+}
+
+function timesOverlapWithinOneHour(timeA, timeB) {
+  return Math.abs(timeToMinutes(timeA) - timeToMinutes(timeB)) < 60
+}
+
+function getConflictingTimesForOneHourSlot(requestedTime, existingTimes) {
+  return (existingTimes || []).filter((existingTime) => timesOverlapWithinOneHour(requestedTime, existingTime))
+}
+
 async function getAcceptedTimesForWorkerDate(workerId, bookingDate) {
   const result = await db.query(
     `SELECT booking_time
@@ -472,6 +489,10 @@ app.post('/api/bookings', verifyTokenMiddleware, async (req, res) => {
     return res.status(400).json({ error: 'Invalid booking date or time format' })
   }
 
+  if (!isWholeHourBookingTime(normalizedBookingTime)) {
+    return res.status(400).json({ error: 'Please book time in full hours e.g 7:00, 8:00' })
+  }
+
   const bookingDateTime = new Date(`${normalizedBookingDate}T${normalizedBookingTime}:00`)
   const now = new Date()
   now.setSeconds(0, 0)
@@ -486,11 +507,12 @@ app.post('/api/bookings', verifyTokenMiddleware, async (req, res) => {
 
   try {
     const bookedTimes = await getAcceptedTimesForWorkerDate(workerId, normalizedBookingDate)
-    if (bookedTimes.includes(normalizedBookingTime)) {
+    const conflictingTimes = getConflictingTimesForOneHourSlot(normalizedBookingTime, bookedTimes)
+    if (conflictingTimes.length > 0) {
       return res.status(409).json({
         error: 'This time slot is already booked for this worker.',
         date: normalizedBookingDate,
-        bookedTimes,
+        bookedTimes: conflictingTimes,
       })
     }
 
@@ -646,13 +668,15 @@ app.patch('/api/bookings/:bookingId', verifyTokenMiddleware, async (req, res) =>
 
       if (status === 'accepted') {
         const bookedTimes = await getAcceptedTimesForWorkerDate(booking.worker_id, booking.booking_date)
-        const hasConflict = bookedTimes.includes(String(booking.booking_time || '').trim()) && normalizedCurrentStatus !== 'accepted'
+        const targetBookingTime = String(booking.booking_time || '').trim()
+        const conflictingTimes = getConflictingTimesForOneHourSlot(targetBookingTime, bookedTimes)
+        const hasConflict = conflictingTimes.length > 0 && normalizedCurrentStatus !== 'accepted'
 
         if (hasConflict) {
           return res.status(409).json({
             error: 'Cannot accept booking because this worker is already booked at this time.',
             date: booking.booking_date,
-            bookedTimes,
+            bookedTimes: conflictingTimes,
           })
         }
       }
