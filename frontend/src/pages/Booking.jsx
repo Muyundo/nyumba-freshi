@@ -25,6 +25,29 @@ function formatTime24to12(time24) {
   return `${hour12}:${minutes} ${ampm}`
 }
 
+function getTodayDateString() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function getCurrentTimeString() {
+  const now = new Date()
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  return `${hours}:${minutes}`
+}
+
+function isPastBookingDateTime(selectedDate, selectedTime) {
+  if (!selectedDate || !selectedTime) return false
+  const bookingDateTime = new Date(`${selectedDate}T${selectedTime}:00`)
+  const now = new Date()
+  now.setSeconds(0, 0)
+  return bookingDateTime < now
+}
+
 export default function Booking() {
   const { workerId } = useParams()
   const [date, setDate] = useState('')
@@ -35,6 +58,8 @@ export default function Booking() {
   const [selectedServices, setSelectedServices] = useState({ cleaning: false, laundry: false })
   const [message, setMessage] = useState('')
   const navigate = useNavigate()
+  const todayDate = getTodayDateString()
+  const minTime = date === todayDate ? getCurrentTimeString() : ''
 
   useEffect(() => {
     const loadWorker = async () => {
@@ -93,6 +118,11 @@ export default function Booking() {
 
     if (!time) {
       setMessage('Please select a time')
+      return
+    }
+
+    if (isPastBookingDateTime(date, time)) {
+      setMessage('Booking date and time cannot be in the past. Please choose a current or future time.')
       return
     }
 
@@ -163,7 +193,15 @@ export default function Booking() {
               id="date"
               type="date" 
               value={date} 
-              onChange={(e) => setDate(e.target.value)} 
+              min={todayDate}
+              onChange={(e) => {
+                const nextDate = e.target.value
+                setDate(nextDate)
+
+                if (nextDate === todayDate && time && time < getCurrentTimeString()) {
+                  setTime('')
+                }
+              }} 
               required 
             />
           </div>
@@ -173,6 +211,7 @@ export default function Booking() {
               id="time"
               type="time" 
               value={time} 
+              min={minTime}
               onChange={(e) => setTime(e.target.value)} 
               required 
             />

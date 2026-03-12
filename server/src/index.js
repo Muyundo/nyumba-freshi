@@ -421,10 +421,31 @@ app.post('/api/bookings', verifyTokenMiddleware, async (req, res) => {
     return res.status(400).json({ error: 'bookingTime is required' })
   }
 
+  const normalizedBookingDate = String(bookingDate).trim()
+  const normalizedBookingTime = String(bookingTime).trim()
+  const isValidDateFormat = /^\d{4}-\d{2}-\d{2}$/.test(normalizedBookingDate)
+  const isValidTimeFormat = /^\d{2}:\d{2}$/.test(normalizedBookingTime)
+
+  if (!isValidDateFormat || !isValidTimeFormat) {
+    return res.status(400).json({ error: 'Invalid booking date or time format' })
+  }
+
+  const bookingDateTime = new Date(`${normalizedBookingDate}T${normalizedBookingTime}:00`)
+  const now = new Date()
+  now.setSeconds(0, 0)
+
+  if (Number.isNaN(bookingDateTime.getTime())) {
+    return res.status(400).json({ error: 'Invalid booking date or time' })
+  }
+
+  if (bookingDateTime < now) {
+    return res.status(400).json({ error: 'Booking date and time cannot be in the past' })
+  }
+
   try {
     const result = await db.query(
       'INSERT INTO bookings (homeowner_id, worker_id, service, booking_date, booking_time, notes, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
-      [homeownerId, workerId, service, bookingDate, bookingTime, notes || '', 'pending']
+      [homeownerId, workerId, service, normalizedBookingDate, normalizedBookingTime, notes || '', 'pending']
     )
     
     res.status(201).json({
@@ -432,8 +453,8 @@ app.post('/api/bookings', verifyTokenMiddleware, async (req, res) => {
       homeownerId,
       workerId,
       service,
-      bookingDate,
-      bookingTime,
+      bookingDate: normalizedBookingDate,
+      bookingTime: normalizedBookingTime,
       notes: notes || '',
       status: 'pending',
       createdAt: new Date().toISOString()
