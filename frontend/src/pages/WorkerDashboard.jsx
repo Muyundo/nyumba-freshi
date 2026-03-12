@@ -496,7 +496,7 @@ export default function WorkerDashboard() {
                         <p className="job-homeowner">{job.homeowner}</p>
                       </div>
                       <span className={`status-badge ${job.status === 'in-progress' ? 'status-working' : ''}`}>
-                        {job.status === 'in-progress' ? '🔴 Working' : '✓ Accepted'}
+                        {job.status === 'in-progress' ? '� Working' : '✓ Accepted'}
                       </span>
                     </div>
                     <div className="job-details">

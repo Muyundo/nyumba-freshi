@@ -249,7 +249,7 @@ export default function Workers() {
                   {w.currentStatus && (
                     <div className={`worker-status ${w.currentStatus.isWorking ? 'status-working' : 'status-available'}`}>
                       <span className="status-dot"></span>
-                      {w.currentStatus.isWorking ? '🔴 Currently Working' : '🟢 Available'}
+                      {w.currentStatus.isWorking ? '� Currently Working' : '🟢 Available'}
                     </div>
                   )}
                 </div>
