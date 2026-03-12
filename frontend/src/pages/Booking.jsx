@@ -69,6 +69,18 @@ function isPastBookingDateTime(selectedDate, selectedTime) {
   return bookingDateTime < now
 }
 
+function getHourOptions(minTime) {
+  const minHour = minTime ? Number(String(minTime).split(':')[0]) : 0
+  const options = []
+
+  for (let hour = minHour; hour < 24; hour += 1) {
+    const value = `${String(hour).padStart(2, '0')}:00`
+    options.push({ value, label: formatTime24to12(value) })
+  }
+
+  return options
+}
+
 export default function Booking() {
   const { workerId } = useParams()
   const location = useLocation()
@@ -85,6 +97,7 @@ export default function Booking() {
   const navigate = useNavigate()
   const todayDate = getTodayDateString()
   const minTime = date === todayDate ? getCurrentTimeString() : ''
+  const availableHourOptions = getHourOptions(minTime)
   const isAvailabilityMode = new URLSearchParams(location.search).get('mode') === 'availability'
 
   useEffect(() => {
@@ -288,15 +301,26 @@ export default function Booking() {
           </div>
           <div className="booking-form-group">
             <label htmlFor="time">Time (AM/PM)</label>
-            <input 
+            <select
               id="time"
-              type="time" 
-              value={time} 
-              min={minTime}
-              step={3600}
-              onChange={(e) => setTime(e.target.value)} 
-              required 
-            />
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              disabled={!date || availableHourOptions.length === 0}
+              required
+            >
+              <option value="" disabled>
+                {!date
+                  ? 'Select a date first'
+                  : availableHourOptions.length === 0
+                    ? 'No available hours left today'
+                    : 'Select hour'}
+              </option>
+              {availableHourOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
             {time && <p className="time-display">{formatTime24to12(time)}</p>}
             {availabilityLoading && <p className="availability-info">Checking worker availability...</p>}
             {availabilityError && <p className="availability-error">{availabilityError}</p>}
