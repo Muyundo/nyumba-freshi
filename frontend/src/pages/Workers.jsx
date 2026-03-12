@@ -248,9 +248,14 @@ export default function Workers() {
                 </div>
 
                 <div className="worker-card-footer">
-                  <Link to={`/booking/${w.id}`} className="book-now-btn">
-                    Book Now
-                  </Link>
+                  <div className="worker-card-actions">
+                    <Link to={`/booking/${w.id}`} className="book-now-btn">
+                      Book Now
+                    </Link>
+                    <Link to={`/booking/${w.id}?mode=availability`} className="check-availability-btn">
+                      Check Availability
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}

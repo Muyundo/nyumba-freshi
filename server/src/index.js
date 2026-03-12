@@ -31,6 +31,26 @@ function isValidIdNumber(value) {
   return /^\d{7,9}$/.test(normalizeIdNumber(value))
 }
 
+function isValidBookingDate(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(value || '').trim())
+}
+
+function isValidBookingTime(value) {
+  return /^\d{2}:\d{2}$/.test(String(value || '').trim())
+}
+
+async function getAcceptedTimesForWorkerDate(workerId, bookingDate) {
+  const result = await db.query(
+    `SELECT booking_time
+     FROM bookings
+     WHERE worker_id = $1 AND booking_date = $2 AND status = 'accepted'
+     ORDER BY booking_time ASC`,
+    [workerId, bookingDate]
+  )
+
+  return result.rows.map((row) => String(row.booking_time || '').trim()).filter(Boolean)
+}
+
 function getForgotPasswordAttemptKey(req) {
   const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim()
   return forwarded || req.ip || 'unknown'
@@ -408,6 +428,28 @@ app.get('/api/workers/:id', async (req, res) => {
   }
 })
 
+// Get accepted schedule for a worker on a specific date
+app.get('/api/workers/:workerId/availability', verifyTokenMiddleware, async (req, res) => {
+  const { workerId } = req.params
+  const date = String(req.query.date || '').trim()
+
+  if (!date) {
+    return res.status(400).json({ error: 'date query parameter is required (YYYY-MM-DD)' })
+  }
+
+  if (!isValidBookingDate(date)) {
+    return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' })
+  }
+
+  try {
+    const bookedTimes = await getAcceptedTimesForWorkerDate(workerId, date)
+    return res.json({ workerId: Number(workerId), date, bookedTimes })
+  } catch (err) {
+    console.error('Get worker availability error', err)
+    return res.status(500).json({ error: 'Failed to fetch worker availability' })
+  }
+})
+
 // Create a booking
 app.post('/api/bookings', verifyTokenMiddleware, async (req, res) => {
   const { workerId, service, bookingDate, bookingTime, notes } = req.body || {}
@@ -423,8 +465,8 @@ app.post('/api/bookings', verifyTokenMiddleware, async (req, res) => {
 
   const normalizedBookingDate = String(bookingDate).trim()
   const normalizedBookingTime = String(bookingTime).trim()
-  const isValidDateFormat = /^\d{4}-\d{2}-\d{2}$/.test(normalizedBookingDate)
-  const isValidTimeFormat = /^\d{2}:\d{2}$/.test(normalizedBookingTime)
+  const isValidDateFormat = isValidBookingDate(normalizedBookingDate)
+  const isValidTimeFormat = isValidBookingTime(normalizedBookingTime)
 
   if (!isValidDateFormat || !isValidTimeFormat) {
     return res.status(400).json({ error: 'Invalid booking date or time format' })
@@ -443,6 +485,15 @@ app.post('/api/bookings', verifyTokenMiddleware, async (req, res) => {
   }
 
   try {
+    const bookedTimes = await getAcceptedTimesForWorkerDate(workerId, normalizedBookingDate)
+    if (bookedTimes.includes(normalizedBookingTime)) {
+      return res.status(409).json({
+        error: 'This time slot is already booked for this worker.',
+        date: normalizedBookingDate,
+        bookedTimes,
+      })
+    }
+
     const result = await db.query(
       'INSERT INTO bookings (homeowner_id, worker_id, service, booking_date, booking_time, notes, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
       [homeownerId, workerId, service, normalizedBookingDate, normalizedBookingTime, notes || '', 'pending']
@@ -591,6 +642,19 @@ app.patch('/api/bookings/:bookingId', verifyTokenMiddleware, async (req, res) =>
     if (requesterRole === 'worker') {
       if (String(booking.worker_id) !== String(requesterId)) {
         return res.status(403).json({ error: 'Not authorized to update this booking' })
+      }
+
+      if (status === 'accepted') {
+        const bookedTimes = await getAcceptedTimesForWorkerDate(booking.worker_id, booking.booking_date)
+        const hasConflict = bookedTimes.includes(String(booking.booking_time || '').trim()) && normalizedCurrentStatus !== 'accepted'
+
+        if (hasConflict) {
+          return res.status(409).json({
+            error: 'Cannot accept booking because this worker is already booked at this time.',
+            date: booking.booking_date,
+            bookedTimes,
+          })
+        }
       }
     } else if (requesterRole === 'homeowner') {
       if (String(booking.homeowner_id) !== String(requesterId)) {

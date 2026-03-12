@@ -93,6 +93,13 @@ export function getWorker(id) {
   return request(`/api/workers/${id}`)
 }
 
+export function getWorkerAvailability(workerId, date) {
+  return request(`/api/workers/${workerId}/availability?date=${encodeURIComponent(date)}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  })
+}
+
 export function createBooking(payload) {
   return request('/api/bookings', {
     method: 'POST',
@@ -139,6 +146,7 @@ export default {
   register,
   getWorkers,
   getWorker,
+  getWorkerAvailability,
   createBooking,
   getWorkerBookings,
   getHomeownerBookings,

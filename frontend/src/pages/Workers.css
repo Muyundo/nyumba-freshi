@@ -206,6 +206,12 @@
   border-top: 1px solid #f3f4f6;
 }
 
+.worker-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
 .book-now-btn {
   display: block;
   background-color: #2563eb;
@@ -221,6 +227,25 @@
 
 .book-now-btn:hover {
   background-color: #1d4ed8;
+}
+
+.check-availability-btn {
+  display: block;
+  background-color: #eef2ff;
+  color: #3730a3;
+  text-decoration: none;
+  padding: 0.65rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  text-align: center;
+  font-size: 0.9rem;
+  border: 1px solid #c7d2fe;
+  transition: all 0.2s;
+}
+
+.check-availability-btn:hover {
+  background-color: #e0e7ff;
+  border-color: #a5b4fc;
 }
 
 /* Mobile responsive */
