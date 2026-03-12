@@ -369,7 +369,7 @@ export default function WorkerDashboard() {
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon">🔴</div>
+            <div className="stat-icon">�</div>
             <div className="stat-content">
               <span className="stat-value">{inProgressJobs.length}</span>
               <span className="stat-label">Currently Working</span>
