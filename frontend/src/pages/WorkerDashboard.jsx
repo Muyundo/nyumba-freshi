@@ -369,14 +369,14 @@ export default function WorkerDashboard() {
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon">�</div>
+            <div className="stat-icon">🟢</div>
             <div className="stat-content">
               <span className="stat-value">{inProgressJobs.length}</span>
               <span className="stat-label">Currently Working</span>
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon">❌</div>
+            <div className="stat-icon">🔴</div>
             <div className="stat-content">
               <span className="stat-value">{declinedJobs.length}</span>
               <span className="stat-label">Declined</span>
@@ -419,7 +419,7 @@ export default function WorkerDashboard() {
 
           <div className="action-card" onClick={() => setActiveTab('declined')}>
             <div className="action-card-header">
-              <div className="action-icon">❌</div>
+              <div className="action-icon">🔴</div>
               <h3>Declined Jobs</h3>
             </div>
             <p className="action-description">Track jobs you've declined</p>

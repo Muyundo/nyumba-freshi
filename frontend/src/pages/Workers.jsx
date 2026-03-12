@@ -89,9 +89,11 @@ export default function Workers() {
   }
 
   useEffect(() => {
-    const fetchWorkers = async () => {
+    const fetchWorkers = async (showLoader = true) => {
       try {
-        setLoading(true)
+        if (showLoader) {
+          setLoading(true)
+        }
         setError(null)
         const workers = await api.getWorkers()
         
@@ -129,11 +131,19 @@ export default function Workers() {
         console.error('Failed to fetch workers:', err)
         setError('Failed to load workers. Please try again.')
       } finally {
-        setLoading(false)
+        if (showLoader) {
+          setLoading(false)
+        }
       }
     }
 
     fetchWorkers()
+
+    const refreshTimer = setInterval(() => {
+      fetchWorkers(false)
+    }, 10000)
+
+    return () => clearInterval(refreshTimer)
   }, [serviceFilter, locationFilter, estateFilter])
 
   return (
