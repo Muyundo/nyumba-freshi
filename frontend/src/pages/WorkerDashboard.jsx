@@ -268,6 +268,12 @@ export default function WorkerDashboard() {
   }
 
   const handleStartJob = async (bookingId) => {
+    // Check if worker is already working on another job
+    if (inProgressJobs.length > 0) {
+      alert('You are currently working on another job. Please complete that job first before starting a new one.')
+      return
+    }
+
     setProcessingId(bookingId)
     try {
       await api.updateBookingStatus(bookingId, 'in-progress')
@@ -497,13 +503,17 @@ export default function WorkerDashboard() {
                       <p><strong>📅 Date:</strong> {job.date}{job.time && ` at ${job.time}`}</p>
                       {job.homeownerPhone && <p><strong>📞 Phone:</strong> {job.homeownerPhone}</p>}
                       {job.notes && <p><strong>📝 Notes:</strong> {job.notes}</p>}
+                      {job.status === 'accepted' && inProgressJobs.length > 0 && (
+                        <p className="job-blocked-message">⏸️ You must finish your current job before starting this one</p>
+                      )}
                     </div>
                     <div className="job-actions">
                       {job.status === 'accepted' && (
                         <button
                           className="btn-primary"
                           onClick={() => handleStartJob(job.id)}
-                          disabled={processingId === job.id}
+                          disabled={processingId === job.id || inProgressJobs.length > 0}
+                          title={inProgressJobs.length > 0 ? 'Finish your current job first' : ''}
                         >
                           {processingId === job.id ? '...' : '▶ Start Job'}
                         </button>

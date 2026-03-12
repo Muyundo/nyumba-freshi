@@ -734,6 +734,20 @@ app.patch('/api/bookings/:bookingId', verifyTokenMiddleware, async (req, res) =>
         if (normalizedCurrentStatus !== 'accepted') {
           return res.status(400).json({ error: 'Only accepted bookings can be started' })
         }
+
+        // Check if worker is already working on another job
+        const existingInProgressResult = await db.query(
+          `SELECT id FROM bookings 
+           WHERE worker_id = $1 AND status = 'in-progress' AND id != $2 
+           LIMIT 1`,
+          [booking.worker_id, bookingId]
+        )
+
+        if (existingInProgressResult.rows.length > 0) {
+          return res.status(400).json({ 
+            error: 'You are currently working on another job. Please complete that job first before starting a new one.' 
+          })
+        }
       } else if (status === 'completed') {
         if (normalizedCurrentStatus !== 'in-progress') {
           return res.status(400).json({ error: 'Only in-progress bookings can be completed' })
