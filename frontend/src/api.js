@@ -61,11 +61,11 @@ export function login({ role, phone, password }) {
   })
 }
 
-export function verifyWorkerIdForPasswordReset(idNumber) {
+export function verifyWorkerIdForPasswordReset(idNumber, phone) {
   return request('/api/workers/forgot-password/verify-id', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ idNumber }),
+    body: JSON.stringify({ idNumber, phone }),
   })
 }
 

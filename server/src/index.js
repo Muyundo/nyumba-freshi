@@ -110,7 +110,7 @@ app.post('/api/login', async (req, res) => {
 })
 
 app.post('/api/workers/forgot-password/verify-id', async (req, res) => {
-  const { idNumber } = req.body || {}
+  const { idNumber, phone } = req.body || {}
   const attemptKey = getForgotPasswordAttemptKey(req)
   const attemptState = getAttemptState(attemptKey)
 
@@ -128,14 +128,19 @@ app.post('/api/workers/forgot-password/verify-id', async (req, res) => {
     return res.status(400).json({ error: 'Worker ID number must be digits only and between 7 and 9 numbers' })
   }
 
+  const normalizedPhone = normalizePhone(phone)
+  if (!isValidPhone(normalizedPhone)) {
+    return res.status(400).json({ error: 'Phone must be 10 digits and start with 07 or 01' })
+  }
+
   try {
     const result = await db.query(
       `SELECT u.id
        FROM users u
        INNER JOIN worker_profiles wp ON wp.user_id = u.id
-       WHERE u.role = 'Worker' AND wp.id_number = $1
+       WHERE u.role = 'Worker' AND wp.id_number = $1 AND u.phone = $2
        LIMIT 1`,
-      [normalizedIdNumber]
+      [normalizedIdNumber, normalizedPhone]
     )
 
     const worker = result.rows[0]
@@ -159,7 +164,7 @@ app.post('/api/workers/forgot-password/verify-id', async (req, res) => {
       }
 
       return res.status(404).json({
-        error: `Your ID Number is incorrect, Please check and try again or Contact the system administrator. Attempt ${nextAttempts} of ${MAX_FORGOT_PASSWORD_ATTEMPTS}.`,
+        error: `Your ID Number or Phone Number is incorrect. Please check and try again or Contact the system administrator. Attempt ${nextAttempts} of ${MAX_FORGOT_PASSWORD_ATTEMPTS}.`,
         attempts: nextAttempts,
         maxAttempts: MAX_FORGOT_PASSWORD_ATTEMPTS,
         locked: false,
@@ -169,10 +174,10 @@ app.post('/api/workers/forgot-password/verify-id', async (req, res) => {
     forgotPasswordAttempts.delete(attemptKey)
 
     const resetToken = signPasswordResetToken({ userId: worker.id, role: 'Worker', action: 'password_reset' })
-    return res.json({ message: 'ID number verified', resetToken })
+    return res.json({ message: 'ID number and phone number verified', resetToken })
   } catch (err) {
-    console.error('Verify worker ID for password reset error', err)
-    return res.status(500).json({ error: 'Failed to verify ID number' })
+    console.error('Verify worker ID and phone for password reset error', err)
+    return res.status(500).json({ error: 'Failed to verify credentials' })
   }
 })
 

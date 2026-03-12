@@ -18,6 +18,7 @@ export default function Login() {
   const [forgotPasswordMode, setForgotPasswordMode] = useState(false)
   const [forgotStep, setForgotStep] = useState('verify-id')
   const [idNumber, setIdNumber] = useState('')
+  const [forgotPhone, setForgotPhone] = useState('')
   const [resetToken, setResetToken] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -38,6 +39,7 @@ export default function Login() {
     setForgotPasswordMode(true)
     setForgotStep('verify-id')
     setIdNumber('')
+    setForgotPhone('')
     setResetToken('')
     setNewPassword('')
     setConfirmPassword('')
@@ -48,6 +50,7 @@ export default function Login() {
     setForgotPasswordMode(false)
     setForgotStep('verify-id')
     setIdNumber('')
+    setForgotPhone('')
     setResetToken('')
     setNewPassword('')
     setConfirmPassword('')
@@ -101,14 +104,20 @@ export default function Login() {
       return
     }
 
+    if (!isValidPhone(forgotPhone)) {
+      setMessage('Please enter a valid phone number (10 digits starting with 07 or 01).')
+      setMessageType('error')
+      return
+    }
+
     try {
-      const res = await api.verifyWorkerIdForPasswordReset(idNumber)
+      const res = await api.verifyWorkerIdForPasswordReset(idNumber, forgotPhone)
       setResetToken(res.resetToken)
       setForgotStep('reset-password')
-      setMessage('ID number verified. Please set your new password.')
+      setMessage('ID number and phone number verified. Please set your new password.')
       setMessageType('success')
     } catch (err) {
-      setMessage(err?.message || 'Failed to verify ID number. Please try again.')
+      setMessage(err?.message || 'Failed to verify credentials. Please try again.')
       setMessageType('error')
     }
   }
@@ -170,7 +179,7 @@ export default function Login() {
           <h1 className="login-title">{forgotPasswordMode ? 'Forgot Password' : 'Welcome'}</h1>
           <p className="login-subtitle">
             {forgotPasswordMode
-              ? 'Verify your ID number, then set a new worker password.'
+              ? 'Verify your ID number and phone number to reset your password.'
               : 'Login as Homeowner or Worker to continue.'}
           </p>
         </div>
@@ -240,7 +249,20 @@ export default function Login() {
                   />
                 </div>
 
-                <button className="btn-primary" type="submit">Verify ID Number</button>
+                <div className="form-group">
+                  <label>Phone Number</label>
+                  <input
+                    className="form-control"
+                    type="tel"
+                    value={forgotPhone}
+                    onChange={(e) => setForgotPhone(normalizePhone(e.target.value).slice(0, 10))}
+                    placeholder="07XXXXXXXX or 01XXXXXXXX"
+                    maxLength={10}
+                    inputMode="numeric"
+                  />
+                </div>
+
+                <button className="btn-primary" type="submit">Verify Credentials</button>
                 <button type="button" className="link-button" onClick={exitForgotPasswordFlow}>
                   Back to Login
                 </button>
