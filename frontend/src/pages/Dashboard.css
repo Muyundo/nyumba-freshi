@@ -423,6 +423,29 @@
   border-color: #2563eb;
 }
 
+.btn-cancel-booking {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-cancel-booking:hover:not(:disabled) {
+  background-color: #fecaca;
+  border-color: #fca5a5;
+}
+
+.btn-cancel-booking:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 /* Empty State */
 .empty-state {
   text-align: center;
@@ -625,6 +648,10 @@
   }
 
   .btn-view-details {
+    width: 100%;
+  }
+
+  .btn-cancel-booking {
     width: 100%;
   }
 }

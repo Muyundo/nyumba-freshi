@@ -571,17 +571,41 @@ app.get('/api/workers/:workerId/bookings', verifyTokenMiddleware, async (req, re
 app.patch('/api/bookings/:bookingId', verifyTokenMiddleware, async (req, res) => {
   const { bookingId } = req.params
   const { status } = req.body || {}
-  const workerId = req.user.userId
+  const requesterId = req.user.userId
+  const requesterRole = String(req.user.role || '').toLowerCase().trim()
 
   if (!status || !['accepted', 'declined', 'cancelled'].includes(status)) {
     return res.status(400).json({ error: 'status must be accepted, declined, or cancelled' })
   }
 
   try {
-    const bookingResult = await db.query('SELECT * FROM bookings WHERE id = $1 AND worker_id = $2', [bookingId, workerId])
+    const bookingResult = await db.query('SELECT * FROM bookings WHERE id = $1', [bookingId])
     
     if (bookingResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Booking not found or not authorized' })
+      return res.status(404).json({ error: 'Booking not found' })
+    }
+
+    const booking = bookingResult.rows[0]
+    const normalizedCurrentStatus = String(booking.status || '').toLowerCase().trim()
+
+    if (requesterRole === 'worker') {
+      if (String(booking.worker_id) !== String(requesterId)) {
+        return res.status(403).json({ error: 'Not authorized to update this booking' })
+      }
+    } else if (requesterRole === 'homeowner') {
+      if (String(booking.homeowner_id) !== String(requesterId)) {
+        return res.status(403).json({ error: 'Not authorized to update this booking' })
+      }
+
+      if (status !== 'cancelled') {
+        return res.status(403).json({ error: 'Homeowners can only cancel bookings' })
+      }
+
+      if (normalizedCurrentStatus !== 'pending') {
+        return res.status(400).json({ error: 'Only pending bookings can be cancelled by homeowners' })
+      }
+    } else {
+      return res.status(403).json({ error: 'Not authorized to update bookings' })
     }
 
     await db.query(

@@ -136,6 +136,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('home')
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
+  const [cancelingBookingId, setCancelingBookingId] = useState(null)
   const [error, setError] = useState('')
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
@@ -223,6 +224,24 @@ export default function Dashboard() {
       return <span className="status-badge cancelled">○ Cancelled</span>
     }
     return <span className="status-badge pending">⌛ Pending</span>
+  }
+
+  const cancelBooking = async (bookingId) => {
+    const confirmed = window.confirm('Are you sure you want to cancel this pending booking?')
+    if (!confirmed) return
+
+    setError('')
+    setCancelingBookingId(bookingId)
+    try {
+      await api.updateBookingStatus(bookingId, 'cancelled')
+      setBookings((prev) => prev.map((booking) => (
+        booking.id === bookingId ? { ...booking, status: 'cancelled' } : booking
+      )))
+    } catch (cancelError) {
+      setError(cancelError?.message || 'Failed to cancel booking')
+    } finally {
+      setCancelingBookingId(null)
+    }
   }
 
   return (
@@ -340,6 +359,15 @@ export default function Dashboard() {
                       </div>
                       <div className="booking-actions">
                         {getStatusBadge(booking.status)}
+                        {String(booking.status || '').toLowerCase().trim() === 'pending' && (
+                          <button
+                            className="btn-cancel-booking"
+                            onClick={() => cancelBooking(booking.id)}
+                            disabled={cancelingBookingId === booking.id}
+                          >
+                            {cancelingBookingId === booking.id ? 'Cancelling...' : 'Cancel Booking'}
+                          </button>
+                        )}
                         <button className="btn-view-details">View Details</button>
                       </div>
                     </div>
@@ -392,6 +420,15 @@ export default function Dashboard() {
                     </div>
                     <div className="booking-actions">
                       {getStatusBadge(booking.status)}
+                      {String(booking.status || '').toLowerCase().trim() === 'pending' && (
+                        <button
+                          className="btn-cancel-booking"
+                          onClick={() => cancelBooking(booking.id)}
+                          disabled={cancelingBookingId === booking.id}
+                        >
+                          {cancelingBookingId === booking.id ? 'Cancelling...' : 'Cancel Booking'}
+                        </button>
+                      )}
                       <button className="btn-view-details">View Details</button>
                     </div>
                   </div>
