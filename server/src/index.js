@@ -68,6 +68,48 @@ async function getAcceptedTimesForWorkerDate(workerId, bookingDate) {
   return result.rows.map((row) => String(row.booking_time || '').trim()).filter(Boolean)
 }
 
+async function getWorkingTimesForWorkerDate(workerId, bookingDate) {
+  const result = await db.query(
+    `SELECT booking_time
+     FROM bookings
+     WHERE worker_id = $1 AND booking_date = $2 AND status = 'in-progress'
+     ORDER BY booking_time ASC`,
+    [workerId, bookingDate]
+  )
+
+  return result.rows.map((row) => String(row.booking_time || '').trim()).filter(Boolean)
+}
+
+async function getAllUnavailableTimesForWorkerDate(workerId, bookingDate) {
+  const acceptedTimes = await getAcceptedTimesForWorkerDate(workerId, bookingDate)
+  const workingTimes = await getWorkingTimesForWorkerDate(workerId, bookingDate)
+  return [...acceptedTimes, ...workingTimes]
+}
+
+async function getWorkerCurrentStatus(workerId) {
+  const today = new Date().toISOString().split('T')[0]
+  const result = await db.query(
+    `SELECT id, service, booking_time, booking_date
+     FROM bookings
+     WHERE worker_id = $1 AND booking_date = $2 AND status = 'in-progress'
+     LIMIT 1`,
+    [workerId, today]
+  )
+  
+  if (result.rows.length > 0) {
+    const booking = result.rows[0]
+    return {
+      isWorking: true,
+      currentJobId: booking.id,
+      service: booking.service,
+      time: booking.booking_time,
+      date: booking.booking_date,
+    }
+  }
+  
+  return { isWorking: false }
+}
+
 function getForgotPasswordAttemptKey(req) {
   const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim()
   return forwarded || req.ip || 'unknown'
@@ -380,16 +422,22 @@ app.get('/api/workers', async (req, res) => {
       ORDER BY u.id
     `)
     
-    const workers = result.rows.map(w => ({
-      id: w.id,
-      firstName: w.first_name,
-      lastName: w.last_name,
-      fullName: `${w.first_name || ''} ${w.last_name || ''}`.trim(),
-      phone: w.phone,
-      location: w.location,
-      estate: w.estate,
-      services: w.services ? w.services.split(',').filter(s => s) : []
-    }))
+    const workers = await Promise.all(
+      result.rows.map(async (w) => {
+        const currentStatus = await getWorkerCurrentStatus(w.id)
+        return {
+          id: w.id,
+          firstName: w.first_name,
+          lastName: w.last_name,
+          fullName: `${w.first_name || ''} ${w.last_name || ''}`.trim(),
+          phone: w.phone,
+          location: w.location,
+          estate: w.estate,
+          services: w.services ? w.services.split(',').filter(s => s) : [],
+          currentStatus,
+        }
+      })
+    )
     
     res.json(workers)
   } catch (err) {
@@ -427,6 +475,8 @@ app.get('/api/workers/:id', async (req, res) => {
       return res.status(404).json({ error: 'Worker not found' })
     }
     
+    const currentStatus = await getWorkerCurrentStatus(id)
+    
     res.json({
       id: worker.id,
       firstName: worker.first_name,
@@ -437,7 +487,8 @@ app.get('/api/workers/:id', async (req, res) => {
       estate: worker.estate,
       idNumber: worker.id_number,
       availability: worker.availability,
-      services: worker.services ? worker.services.split(',').filter(s => s) : []
+      services: worker.services ? worker.services.split(',').filter(s => s) : [],
+      currentStatus,
     })
   } catch (err) {
     console.error('Get worker error', err)
@@ -459,8 +510,8 @@ app.get('/api/workers/:workerId/availability', verifyTokenMiddleware, async (req
   }
 
   try {
-    const bookedTimes = await getAcceptedTimesForWorkerDate(workerId, date)
-    return res.json({ workerId: Number(workerId), date, bookedTimes })
+    const unavailableTimes = await getAllUnavailableTimesForWorkerDate(workerId, date)
+    return res.json({ workerId: Number(workerId), date, bookedTimes: unavailableTimes })
   } catch (err) {
     console.error('Get worker availability error', err)
     return res.status(500).json({ error: 'Failed to fetch worker availability' })
@@ -506,11 +557,11 @@ app.post('/api/bookings', verifyTokenMiddleware, async (req, res) => {
   }
 
   try {
-    const bookedTimes = await getAcceptedTimesForWorkerDate(workerId, normalizedBookingDate)
-    const conflictingTimes = getConflictingTimesForOneHourSlot(normalizedBookingTime, bookedTimes)
+    const unavailableTimes = await getAllUnavailableTimesForWorkerDate(workerId, normalizedBookingDate)
+    const conflictingTimes = getConflictingTimesForOneHourSlot(normalizedBookingTime, unavailableTimes)
     if (conflictingTimes.length > 0) {
       return res.status(409).json({
-        error: 'This time slot is already booked for this worker.',
+        error: 'This worker is unavailable at this time (already booked or working).',
         date: normalizedBookingDate,
         bookedTimes: conflictingTimes,
       })
@@ -640,15 +691,15 @@ app.get('/api/workers/:workerId/bookings', verifyTokenMiddleware, async (req, re
   }
 })
 
-// Accept, decline, or cancel a booking
+// Accept, decline, start, complete, or cancel a booking
 app.patch('/api/bookings/:bookingId', verifyTokenMiddleware, async (req, res) => {
   const { bookingId } = req.params
   const { status } = req.body || {}
   const requesterId = req.user.userId
   const requesterRole = String(req.user.role || '').toLowerCase().trim()
 
-  if (!status || !['accepted', 'declined', 'cancelled'].includes(status)) {
-    return res.status(400).json({ error: 'status must be accepted, declined, or cancelled' })
+  if (!status || !['accepted', 'declined', 'cancelled', 'in-progress', 'completed'].includes(status)) {
+    return res.status(400).json({ error: 'status must be accepted, declined, cancelled, in-progress, or completed' })
   }
 
   try {
@@ -667,18 +718,28 @@ app.patch('/api/bookings/:bookingId', verifyTokenMiddleware, async (req, res) =>
       }
 
       if (status === 'accepted') {
-        const bookedTimes = await getAcceptedTimesForWorkerDate(booking.worker_id, booking.booking_date)
+        const unavailableTimes = await getAllUnavailableTimesForWorkerDate(booking.worker_id, booking.booking_date)
         const targetBookingTime = String(booking.booking_time || '').trim()
-        const conflictingTimes = getConflictingTimesForOneHourSlot(targetBookingTime, bookedTimes)
+        const conflictingTimes = getConflictingTimesForOneHourSlot(targetBookingTime, unavailableTimes)
         const hasConflict = conflictingTimes.length > 0 && normalizedCurrentStatus !== 'accepted'
 
         if (hasConflict) {
           return res.status(409).json({
-            error: 'Cannot accept booking because this worker is already booked at this time.',
+            error: 'Cannot accept booking because this worker is already booked or working at this time.',
             date: booking.booking_date,
             bookedTimes: conflictingTimes,
           })
         }
+      } else if (status === 'in-progress') {
+        if (normalizedCurrentStatus !== 'accepted') {
+          return res.status(400).json({ error: 'Only accepted bookings can be started' })
+        }
+      } else if (status === 'completed') {
+        if (normalizedCurrentStatus !== 'in-progress') {
+          return res.status(400).json({ error: 'Only in-progress bookings can be completed' })
+        }
+      } else if (status !== 'declined') {
+        return res.status(403).json({ error: 'Workers can only accept, decline, start, or complete bookings' })
       }
     } else if (requesterRole === 'homeowner') {
       if (String(booking.homeowner_id) !== String(requesterId)) {

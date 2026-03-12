@@ -245,13 +245,26 @@ export default function Workers() {
                       {w.rating || 'No reviews yet'}
                     </span>
                   </div>
+
+                  {w.currentStatus && (
+                    <div className={`worker-status ${w.currentStatus.isWorking ? 'status-working' : 'status-available'}`}>
+                      <span className="status-dot"></span>
+                      {w.currentStatus.isWorking ? '🔴 Currently Working' : '🟢 Available'}
+                    </div>
+                  )}
                 </div>
 
                 <div className="worker-card-footer">
                   <div className="worker-card-actions">
-                    <Link to={`/booking/${w.id}`} className="book-now-btn">
-                      Book Now
-                    </Link>
+                    {w.currentStatus?.isWorking ? (
+                      <button className="book-now-btn" disabled title="Worker is currently working">
+                        ⛔ Cannot Book Now
+                      </button>
+                    ) : (
+                      <Link to={`/booking/${w.id}`} className="book-now-btn">
+                        Book Now
+                      </Link>
+                    )}
                     <Link to={`/booking/${w.id}?mode=availability`} className="check-availability-btn">
                       Check Availability
                     </Link>

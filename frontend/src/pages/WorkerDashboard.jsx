@@ -210,7 +210,9 @@ export default function WorkerDashboard() {
 
   const jobRequests = bookings.filter((booking) => booking.status === 'pending')
   const acceptedJobs = bookings.filter((booking) => booking.status === 'accepted')
-  const completedJobs = bookings.filter((booking) => booking.status === 'declined' || booking.status === 'cancelled')
+  const inProgressJobs = bookings.filter((booking) => booking.status === 'in-progress')
+  const allActiveJobs = [...acceptedJobs, ...inProgressJobs]
+  const completedJobs = bookings.filter((booking) => booking.status === 'completed' || booking.status === 'declined' || booking.status === 'cancelled')
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -259,6 +261,36 @@ export default function WorkerDashboard() {
     } catch (err) {
       console.error('Cancel booking error', err)
       alert(err?.message || 'Failed to cancel booking')
+    } finally {
+      setProcessingId(null)
+    }
+  }
+
+  const handleStartJob = async (bookingId) => {
+    setProcessingId(bookingId)
+    try {
+      await api.updateBookingStatus(bookingId, 'in-progress')
+      setBookings((prev) => prev.map((booking) => (
+        booking.id === bookingId ? { ...booking, status: 'in-progress' } : booking
+      )))
+    } catch (err) {
+      console.error('Start job error', err)
+      alert(err?.message || 'Failed to start job')
+    } finally {
+      setProcessingId(null)
+    }
+  }
+
+  const handleFinishJob = async (bookingId) => {
+    setProcessingId(bookingId)
+    try {
+      await api.updateBookingStatus(bookingId, 'completed')
+      setBookings((prev) => prev.map((booking) => (
+        booking.id === bookingId ? { ...booking, status: 'completed' } : booking
+      )))
+    } catch (err) {
+      console.error('Finish job error', err)
+      alert(err?.message || 'Failed to finish job')
     } finally {
       setProcessingId(null)
     }
@@ -320,7 +352,14 @@ export default function WorkerDashboard() {
             <div className="stat-icon">💼</div>
             <div className="stat-content">
               <span className="stat-value">{acceptedJobs.length}</span>
-              <span className="stat-label">Active Jobs</span>
+              <span className="stat-label">Ready to Start</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon">🔴</div>
+            <div className="stat-content">
+              <span className="stat-value">{inProgressJobs.length}</span>
+              <span className="stat-label">Currently Working</span>
             </div>
           </div>
           <div className="stat-card">
@@ -353,7 +392,7 @@ export default function WorkerDashboard() {
             </div>
             <p className="action-description">Manage your active jobs</p>
             <div className="action-card-footer">
-              <span className="active-count">{acceptedJobs.length} active</span>
+              <span className="active-count">{allActiveJobs.length} active</span>
               <button className="btn-primary">View Jobs</button>
             </div>
           </div>
@@ -414,9 +453,9 @@ export default function WorkerDashboard() {
             <h2 className="section-title">Your Jobs</h2>
             {loading ? (
               <div className="loading-message">Loading bookings...</div>
-            ) : acceptedJobs.length > 0 ? (
+            ) : allActiveJobs.length > 0 ? (
               <div className="jobs-list">
-                {acceptedJobs.map((job) => (
+                {allActiveJobs.map((job) => (
                   <div key={job.id} className="job-card">
                     <div className="job-header">
                       <div className="job-avatar">👤</div>
@@ -424,7 +463,9 @@ export default function WorkerDashboard() {
                         <h3 className="job-service">{job.service}</h3>
                         <p className="job-homeowner">{job.homeowner}</p>
                       </div>
-                      <span className="status-badge">Accepted</span>
+                      <span className={`status-badge ${job.status === 'in-progress' ? 'status-working' : ''}`}>
+                        {job.status === 'in-progress' ? '🔴 Working' : '✓ Accepted'}
+                      </span>
                     </div>
                     <div className="job-details">
                       <p><strong>📅 Date:</strong> {job.date}{job.time && ` at ${job.time}`}</p>
@@ -432,13 +473,24 @@ export default function WorkerDashboard() {
                       {job.notes && <p><strong>📝 Notes:</strong> {job.notes}</p>}
                     </div>
                     <div className="job-actions">
-                      <button
-                        className="btn-cancel"
-                        onClick={() => handleCancelJob(job.id)}
-                        disabled={processingId === job.id}
-                      >
-                        {processingId === job.id ? '...' : '✕ Cancel'}
-                      </button>
+                      {job.status === 'accepted' && (
+                        <button
+                          className="btn-primary"
+                          onClick={() => handleStartJob(job.id)}
+                          disabled={processingId === job.id}
+                        >
+                          {processingId === job.id ? '...' : '▶ Start Job'}
+                        </button>
+                      )}
+                      {job.status === 'in-progress' && (
+                        <button
+                          className="btn-success"
+                          onClick={() => handleFinishJob(job.id)}
+                          disabled={processingId === job.id}
+                        >
+                          {processingId === job.id ? '...' : '✓ Finish Job'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

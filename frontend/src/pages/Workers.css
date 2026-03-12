@@ -201,6 +201,34 @@
   color: #6b7280;
 }
 
+.worker-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: 0.75rem;
+}
+
+.worker-status.status-available {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.worker-status.status-working {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+}
+
 .worker-card-footer {
   padding: 1rem 1.5rem;
   border-top: 1px solid #f3f4f6;
@@ -223,10 +251,18 @@
   text-align: center;
   font-size: 0.95rem;
   transition: background-color 0.2s;
+  border: none;
+  cursor: pointer;
 }
 
-.book-now-btn:hover {
+.book-now-btn:hover:not(:disabled) {
   background-color: #1d4ed8;
+}
+
+.book-now-btn:disabled {
+  background-color: #ef4444;
+  cursor: not-allowed;
+  opacity: 0.8;
 }
 
 .check-availability-btn {
