@@ -242,7 +242,8 @@
 }
 
 .pending-count,
-.active-count {
+.active-count,
+.declined-count {
   font-size: 0.9rem;
   color: #6b7280;
   font-weight: 500;
@@ -374,6 +375,20 @@
 .status-badge.status-working {
   background-color: #fee2e2;
   color: #991b1b;
+}
+
+.status-badge.status-declined {
+  background-color: #fecaca;
+  color: #7f1d1d;
+}
+
+.job-card-declined {
+  border-left-color: #ef4444;
+  opacity: 0.85;
+}
+
+.job-card-declined:hover {
+  opacity: 1;
 }
 
 .job-details {

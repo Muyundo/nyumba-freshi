@@ -212,7 +212,8 @@ export default function WorkerDashboard() {
   const acceptedJobs = bookings.filter((booking) => booking.status === 'accepted')
   const inProgressJobs = bookings.filter((booking) => booking.status === 'in-progress')
   const allActiveJobs = [...acceptedJobs, ...inProgressJobs]
-  const completedJobs = bookings.filter((booking) => booking.status === 'completed' || booking.status === 'declined' || booking.status === 'cancelled')
+  const declinedJobs = bookings.filter((booking) => booking.status === 'declined')
+  const completedJobs = bookings.filter((booking) => booking.status === 'completed' || booking.status === 'cancelled')
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -315,6 +316,12 @@ export default function WorkerDashboard() {
             >
               Your Jobs
             </button>
+            <button 
+              className={`nav-tab ${activeTab === 'declined' ? 'active' : ''}`}
+              onClick={() => setActiveTab('declined')}
+            >
+              Declined ({declinedJobs.length})
+            </button>
           </nav>
         </div>
         <div className="header-right">
@@ -363,6 +370,13 @@ export default function WorkerDashboard() {
             </div>
           </div>
           <div className="stat-card">
+            <div className="stat-icon">❌</div>
+            <div className="stat-content">
+              <span className="stat-value">{declinedJobs.length}</span>
+              <span className="stat-label">Declined</span>
+            </div>
+          </div>
+          <div className="stat-card">
             <div className="stat-icon">✅</div>
             <div className="stat-content">
               <span className="stat-value">{completedJobs.length}</span>
@@ -394,6 +408,18 @@ export default function WorkerDashboard() {
             <div className="action-card-footer">
               <span className="active-count">{allActiveJobs.length} active</span>
               <button className="btn-primary">View Jobs</button>
+            </div>
+          </div>
+
+          <div className="action-card" onClick={() => setActiveTab('declined')}>
+            <div className="action-card-header">
+              <div className="action-icon">❌</div>
+              <h3>Declined Jobs</h3>
+            </div>
+            <p className="action-description">Track jobs you've declined</p>
+            <div className="action-card-footer">
+              <span className="declined-count">{declinedJobs.length} declined</span>
+              <button className="btn-primary">View Declined</button>
             </div>
           </div>
         </div>
@@ -448,7 +474,7 @@ export default function WorkerDashboard() {
               </div>
             )}
           </section>
-        ) : (
+        ) : activeTab === 'jobs' ? (
           <section className="jobs-section">
             <h2 className="section-title">Your Jobs</h2>
             {loading ? (
@@ -500,6 +526,39 @@ export default function WorkerDashboard() {
                 <div className="empty-icon">💼</div>
                 <h3>No active jobs</h3>
                 <p>Start by accepting job requests to see them here.</p>
+              </div>
+            )}
+          </section>
+        ) : (
+          <section className="jobs-section">
+            <h2 className="section-title">Declined Jobs</h2>
+            {loading ? (
+              <div className="loading-message">Loading declined jobs...</div>
+            ) : declinedJobs.length > 0 ? (
+              <div className="jobs-list">
+                {declinedJobs.map((job) => (
+                  <div key={job.id} className="job-card job-card-declined">
+                    <div className="job-header">
+                      <div className="job-avatar">👤</div>
+                      <div className="job-title-info">
+                        <h3 className="job-service">{job.service}</h3>
+                        <p className="job-homeowner">{job.homeowner}</p>
+                      </div>
+                      <span className="status-badge status-declined">❌ Declined</span>
+                    </div>
+                    <div className="job-details">
+                      <p><strong>📅 Date:</strong> {job.date}{job.time && ` at ${job.time}`}</p>
+                      {job.homeownerPhone && <p><strong>📞 Phone:</strong> {job.homeownerPhone}</p>}
+                      {job.notes && <p><strong>📝 Notes:</strong> {job.notes}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <div className="empty-icon">✓</div>
+                <h3>No declined jobs</h3>
+                <p>You haven't declined any job requests yet.</p>
               </div>
             )}
           </section>
