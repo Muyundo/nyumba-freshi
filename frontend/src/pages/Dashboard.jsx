@@ -295,7 +295,7 @@ export default function Dashboard() {
         {activeTab === 'home' ? (
           <>
             <div className="welcome-section">
-              <h1 className="welcome-title">Welcome back, {firstName} 👋</h1>
+              <h1 className="welcome-title">Welcome {firstName}</h1>
               <p className="welcome-subtitle">Find trusted help for your home today.</p>
               <div className="welcome-actions">
                 <button className="btn-primary" onClick={() => navigate('/workers')}>
