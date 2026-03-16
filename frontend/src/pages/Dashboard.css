@@ -306,6 +306,14 @@
   margin-bottom: 3rem;
 }
 
+.completed-bookings-section {
+  margin-bottom: 3rem;
+}
+
+.completed-booking-item {
+  border-color: #bbf7d0;
+}
+
 .bookings-list {
   display: flex;
   flex-direction: column;
@@ -463,6 +471,10 @@
   background: white;
   border-radius: 1rem;
   border: 1px solid #e2e8f0;
+}
+
+.compact-empty-state {
+  padding: 2rem 1.5rem;
 }
 
 .empty-state-icon {

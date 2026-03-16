@@ -204,6 +204,11 @@ export default function Dashboard() {
     return ['pending', 'accepted', 'in-progress'].includes(normalizedStatus)
   })
 
+  const completedBookings = bookings.filter((booking) => {
+    const normalizedStatus = String(booking.status || '').toLowerCase().trim()
+    return normalizedStatus === 'completed'
+  })
+
   const quickServices = bookings.slice(0, 3).map((booking) => ({
     service: booking.service,
     worker: booking.workerName,
@@ -393,6 +398,45 @@ export default function Dashboard() {
                   <button className="btn-find-workers" onClick={() => navigate('/workers')}>
                     Find Workers
                   </button>
+                </div>
+              )}
+            </section>
+
+            <section className="completed-bookings-section">
+              <h2 className="section-title">
+                <span className="section-icon">✅</span>
+                Completed Jobs
+              </h2>
+              {loading ? (
+                <div className="loading-message">Loading completed jobs...</div>
+              ) : completedBookings.length > 0 ? (
+                <div className="bookings-list">
+                  {completedBookings.map((booking) => (
+                    <div key={booking.id} className="booking-item completed-booking-item">
+                      <div className="booking-avatar">
+                        {(booking.workerName || 'W').charAt(0).toUpperCase()}
+                        <span className="online-indicator"></span>
+                      </div>
+                      <div className="booking-content">
+                        <h3 className="booking-title">
+                          {booking.service} with {booking.workerName || 'Worker'}
+                        </h3>
+                        <p className="booking-date">
+                          {booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'N/A'}
+                          {booking.bookingTime && ` at ${formatTime24to12(booking.bookingTime)}`}
+                        </p>
+                      </div>
+                      <div className="booking-actions">
+                        {getStatusBadge(booking.status)}
+                        <button className="btn-view-details">View Details</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state compact-empty-state">
+                  <p className="empty-state-title">No completed jobs yet</p>
+                  <p className="empty-state-subtitle">Completed work will stay here as part of your booking history.</p>
                 </div>
               )}
             </section>
