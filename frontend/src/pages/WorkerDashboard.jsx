@@ -401,7 +401,7 @@ export default function WorkerDashboard() {
             <p className="action-description">View & accept appointments</p>
             <div className="action-card-footer">
               <span className="pending-count">{jobRequests.length} pending</span>
-              <button className="btn-primary">View Requests</button>
+              <button className="action-card-button">View Requests</button>
             </div>
           </div>
 
@@ -413,7 +413,7 @@ export default function WorkerDashboard() {
             <p className="action-description">Manage your active jobs</p>
             <div className="action-card-footer">
               <span className="active-count">{allActiveJobs.length} active</span>
-              <button className="btn-primary">View Jobs</button>
+              <button className="action-card-button">View Jobs</button>
             </div>
           </div>
 
@@ -425,7 +425,7 @@ export default function WorkerDashboard() {
             <p className="action-description">Track jobs you've declined</p>
             <div className="action-card-footer">
               <span className="declined-count">{declinedJobs.length} declined</span>
-              <button className="btn-primary">View Declined</button>
+              <button className="action-card-button">View Declined</button>
             </div>
           </div>
         </div>

@@ -239,6 +239,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .pending-count,
@@ -247,6 +249,34 @@
   font-size: 0.9rem;
   color: #6b7280;
   font-weight: 500;
+}
+
+.action-card-button {
+  appearance: none;
+  border: 1px solid #bfdbfe;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  padding: 0.72rem 1.1rem;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.18);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  flex: 0 0 auto;
+}
+
+.action-card-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 24px rgba(37, 99, 235, 0.22);
+  filter: saturate(1.05);
+}
+
+.action-card-button:active {
+  transform: translateY(0);
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.18);
 }
 
 .btn-primary {
@@ -686,7 +716,8 @@
   .btn-decline,
   .btn-cancel,
   .btn-primary,
-  .btn-change-password {
+  .btn-change-password,
+  .action-card-button {
     width: 100%;
     text-align: center;
   }
