@@ -201,7 +201,7 @@ export default function Dashboard() {
 
   const upcomingBookings = bookings.filter((booking) => {
     const normalizedStatus = String(booking.status || '').toLowerCase().trim()
-    return ['pending', 'accepted'].includes(normalizedStatus)
+    return ['pending', 'accepted', 'in-progress'].includes(normalizedStatus)
   })
 
   const quickServices = bookings.slice(0, 3).map((booking) => ({
@@ -217,8 +217,14 @@ export default function Dashboard() {
     if (normalizedStatus === 'accepted') {
       return <span className="status-badge accepted">✓ Accepted</span>
     }
+    if (normalizedStatus === 'in-progress') {
+      return <span className="status-badge in-progress">◔ In Progress</span>
+    }
+    if (normalizedStatus === 'completed') {
+      return <span className="status-badge completed">✓ Completed</span>
+    }
     if (normalizedStatus === 'declined') {
-      return <span className="status-badge declined">✕ Declined</span>
+      return <span className="status-badge declined">Declined</span>
     }
     if (normalizedStatus === 'cancelled') {
       return <span className="status-badge cancelled">○ Cancelled</span>
