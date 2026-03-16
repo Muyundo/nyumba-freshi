@@ -717,20 +717,7 @@ app.patch('/api/bookings/:bookingId', verifyTokenMiddleware, async (req, res) =>
         return res.status(403).json({ error: 'Not authorized to update this booking' })
       }
 
-      if (status === 'accepted') {
-        const unavailableTimes = await getAllUnavailableTimesForWorkerDate(booking.worker_id, booking.booking_date)
-        const targetBookingTime = String(booking.booking_time || '').trim()
-        const conflictingTimes = getConflictingTimesForOneHourSlot(targetBookingTime, unavailableTimes)
-        const hasConflict = conflictingTimes.length > 0 && normalizedCurrentStatus !== 'accepted'
-
-        if (hasConflict) {
-          return res.status(409).json({
-            error: 'Cannot accept booking because this worker is already booked or working at this time.',
-            date: booking.booking_date,
-            bookedTimes: conflictingTimes,
-          })
-        }
-      } else if (status === 'in-progress') {
+      if (status === 'in-progress') {
         if (normalizedCurrentStatus !== 'accepted') {
           return res.status(400).json({ error: 'Only accepted bookings can be started' })
         }
@@ -752,7 +739,7 @@ app.patch('/api/bookings/:bookingId', verifyTokenMiddleware, async (req, res) =>
         if (normalizedCurrentStatus !== 'in-progress') {
           return res.status(400).json({ error: 'Only in-progress bookings can be completed' })
         }
-      } else if (status !== 'declined') {
+      } else if (status !== 'accepted' && status !== 'declined') {
         return res.status(403).json({ error: 'Workers can only accept, decline, start, or complete bookings' })
       }
     } else if (requesterRole === 'homeowner') {
