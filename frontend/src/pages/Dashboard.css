@@ -310,6 +310,19 @@
   margin-bottom: 3rem;
 }
 
+.bookings-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+  align-items: start;
+  margin-bottom: 3rem;
+}
+
+.bookings-overview-grid .upcoming-bookings-section,
+.bookings-overview-grid .completed-bookings-section {
+  margin-bottom: 0;
+}
+
 .completed-booking-item {
   border-color: #bbf7d0;
 }
@@ -656,6 +669,10 @@
   }
 
   .quick-services-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bookings-overview-grid {
     grid-template-columns: 1fr;
   }
 

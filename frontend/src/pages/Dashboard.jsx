@@ -344,102 +344,104 @@ export default function Dashboard() {
               </section>
             )}
 
-            <section className="upcoming-bookings-section">
-              <h2 className="section-title">
-                <span className="section-icon">📅</span>
-                Upcoming Bookings
-              </h2>
-              {loading ? (
-                <div className="loading-message">Loading bookings...</div>
-              ) : upcomingBookings.length > 0 ? (
-                <div className="bookings-list">
-                  {upcomingBookings.map((booking) => (
-                    <div key={booking.id} className="booking-item">
-                      <div className="booking-avatar">
-                        {(booking.workerName || 'W').charAt(0).toUpperCase()}
-                        <span className="online-indicator"></span>
+            <div className="bookings-overview-grid">
+              <section className="upcoming-bookings-section">
+                <h2 className="section-title">
+                  <span className="section-icon">📅</span>
+                  Upcoming Bookings
+                </h2>
+                {loading ? (
+                  <div className="loading-message">Loading bookings...</div>
+                ) : upcomingBookings.length > 0 ? (
+                  <div className="bookings-list">
+                    {upcomingBookings.map((booking) => (
+                      <div key={booking.id} className="booking-item">
+                        <div className="booking-avatar">
+                          {(booking.workerName || 'W').charAt(0).toUpperCase()}
+                          <span className="online-indicator"></span>
+                        </div>
+                        <div className="booking-content">
+                          <h3 className="booking-title">
+                            {booking.service} with {booking.workerName || 'Worker'}
+                          </h3>
+                          <p className="booking-date">
+                            {booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'N/A'}
+                            {booking.bookingTime && ` at ${formatTime24to12(booking.bookingTime)}`}
+                          </p>
+                        </div>
+                        <div className="booking-actions">
+                          {getStatusBadge(booking.status)}
+                          {String(booking.status || '').toLowerCase().trim() === 'pending' && (
+                            <button
+                              className="btn-cancel-booking"
+                              onClick={() => cancelBooking(booking.id)}
+                              disabled={cancelingBookingId === booking.id}
+                            >
+                              {cancelingBookingId === booking.id ? 'Cancelling...' : 'Cancel Booking'}
+                            </button>
+                          )}
+                          <button className="btn-view-details">View Details</button>
+                        </div>
                       </div>
-                      <div className="booking-content">
-                        <h3 className="booking-title">
-                          {booking.service} with {booking.workerName || 'Worker'}
-                        </h3>
-                        <p className="booking-date">
-                          {booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'N/A'}
-                          {booking.bookingTime && ` at ${formatTime24to12(booking.bookingTime)}`}
-                        </p>
-                      </div>
-                      <div className="booking-actions">
-                        {getStatusBadge(booking.status)}
-                        {String(booking.status || '').toLowerCase().trim() === 'pending' && (
-                          <button
-                            className="btn-cancel-booking"
-                            onClick={() => cancelBooking(booking.id)}
-                            disabled={cancelingBookingId === booking.id}
-                          >
-                            {cancelingBookingId === booking.id ? 'Cancelling...' : 'Cancel Booking'}
-                          </button>
-                        )}
-                        <button className="btn-view-details">View Details</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-state">
-                  <div className="empty-state-icon">
-                    <div className="clipboard-icon">
-                      <div className="clipboard-top"></div>
-                      <div className="clipboard-body"></div>
-                      <div className="magnifier">🔍</div>
-                    </div>
+                    ))}
                   </div>
-                  <p className="empty-state-title">No upcoming bookings</p>
-                  <p className="empty-state-subtitle">Find trusted workers near you.</p>
-                  <button className="btn-find-workers" onClick={() => navigate('/workers')}>
-                    Find Workers
-                  </button>
-                </div>
-              )}
-            </section>
-
-            <section className="completed-bookings-section">
-              <h2 className="section-title">
-                <span className="section-icon">✅</span>
-                Completed Jobs
-              </h2>
-              {loading ? (
-                <div className="loading-message">Loading completed jobs...</div>
-              ) : completedBookings.length > 0 ? (
-                <div className="bookings-list">
-                  {completedBookings.map((booking) => (
-                    <div key={booking.id} className="booking-item completed-booking-item">
-                      <div className="booking-avatar">
-                        {(booking.workerName || 'W').charAt(0).toUpperCase()}
-                        <span className="online-indicator"></span>
-                      </div>
-                      <div className="booking-content">
-                        <h3 className="booking-title">
-                          {booking.service} with {booking.workerName || 'Worker'}
-                        </h3>
-                        <p className="booking-date">
-                          {booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'N/A'}
-                          {booking.bookingTime && ` at ${formatTime24to12(booking.bookingTime)}`}
-                        </p>
-                      </div>
-                      <div className="booking-actions">
-                        {getStatusBadge(booking.status)}
-                        <button className="btn-view-details">View Details</button>
+                ) : (
+                  <div className="empty-state">
+                    <div className="empty-state-icon">
+                      <div className="clipboard-icon">
+                        <div className="clipboard-top"></div>
+                        <div className="clipboard-body"></div>
+                        <div className="magnifier">🔍</div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-state compact-empty-state">
-                  <p className="empty-state-title">No completed jobs yet</p>
-                  <p className="empty-state-subtitle">Completed work will stay here as part of your booking history.</p>
-                </div>
-              )}
-            </section>
+                    <p className="empty-state-title">No upcoming bookings</p>
+                    <p className="empty-state-subtitle">Find trusted workers near you.</p>
+                    <button className="btn-find-workers" onClick={() => navigate('/workers')}>
+                      Find Workers
+                    </button>
+                  </div>
+                )}
+              </section>
+
+              <section className="completed-bookings-section">
+                <h2 className="section-title">
+                  <span className="section-icon">✅</span>
+                  Completed Jobs
+                </h2>
+                {loading ? (
+                  <div className="loading-message">Loading completed jobs...</div>
+                ) : completedBookings.length > 0 ? (
+                  <div className="bookings-list">
+                    {completedBookings.map((booking) => (
+                      <div key={booking.id} className="booking-item completed-booking-item">
+                        <div className="booking-avatar">
+                          {(booking.workerName || 'W').charAt(0).toUpperCase()}
+                          <span className="online-indicator"></span>
+                        </div>
+                        <div className="booking-content">
+                          <h3 className="booking-title">
+                            {booking.service} with {booking.workerName || 'Worker'}
+                          </h3>
+                          <p className="booking-date">
+                            {booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'N/A'}
+                            {booking.bookingTime && ` at ${formatTime24to12(booking.bookingTime)}`}
+                          </p>
+                        </div>
+                        <div className="booking-actions">
+                          {getStatusBadge(booking.status)}
+                          <button className="btn-view-details">View Details</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state compact-empty-state">
+                    <p className="empty-state-title">No completed jobs yet</p>
+                    <p className="empty-state-subtitle">Completed work will stay here as part of your booking history.</p>
+                  </div>
+                )}
+              </section>
+            </div>
           </>
         ) : (
           <>
